@@ -295,7 +295,7 @@ public class CrateManager {
             itemBuilder.setSkullTexture(reward.getPlayerSkinTexture());
         }
         if (reward.isGlowingDisplayItem()) {
-            itemBuilder.addEnchant(Enchantment.LUCK, 1, true).addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            itemBuilder.addEnchant(Enchantment.LUCK_OF_THE_SEA, 1, true).addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
         if (reward.shoudHideItemFlags()) {
             itemBuilder.hideAllFlags();
@@ -314,7 +314,7 @@ public class CrateManager {
             .setLore(ChatUtils.colorize(keyConfig.getLore()))
             .setCustomModelData(keyConfig.getCustomModelData());
         if (keyConfig.isEnchanted()) {
-            keyBuilder.addEnchant(Enchantment.LUCK, 1, true).addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            keyBuilder.addEnchant(Enchantment.LUCK_OF_THE_SEA, 1, true).addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
         keyBuilder.setPersistentData(plugin, configManager.getPhysicalKeyNbtTag(), PersistentDataType.STRING, crate.getInternalID());
         return keyBuilder.build();
