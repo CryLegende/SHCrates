@@ -1,0 +1,113 @@
+# ======================================================================== #
+#                  SHCrates - Configuration Principale                     #
+# ======================================================================== #
+#
+# Ce fichier contient les paramètres globaux du plugin SHCrates.
+# Pour la configuration des caisses individuelles, voir le dossier 'crates/'.
+# Pour les messages, voir 'messages.yml'.
+#
+# ======================================================================== #
+
+# --- Paramètres Généraux ---
+
+# Activer le mode debug pour des logs plus détaillés en console.
+# Utile pour le développement ou le diagnostic de problèmes.
+# Valeurs possibles: true, false
+debug_mode: false
+
+# Nom du tag NBT utilisé pour identifier les clés physiques des caisses.
+# IMPORTANT: Changer cette valeur après que des clés aient été distribuées
+# rendra les anciennes clés invalides.
+physical_key_nbt_tag: "SHCrates_KeyID"
+
+# Animation par défaut à utiliser si aucune n'est spécifiée dans la configuration
+# d'une caisse individuelle.
+# Types d'animations disponibles (doivent correspondre aux noms enregistrés dans AnimationManager):
+#   NONE, QUICKCRATE, ROULETTE, CSGO, WHEEL
+default_animation_type: "ROULETTE"
+
+# --- Interaction avec les Caisses Physiques ---
+
+# Configurer le comportement lorsqu'un joueur clique sur une caisse physique sans la clé requise.
+knockback_on_no_key:
+  # Activer ou désactiver le repoussement du joueur.
+  enabled: true
+  # Force du repoussement. Des valeurs plus élevées signifient un repoussement plus fort.
+  # Une valeur de 0.5 est modérée.
+  strength: 0.8
+
+# --- Ouverture de Caisses ---
+
+# Activer le log des récompenses gagnées par les joueurs dans la console du serveur.
+log_rewards_to_console: true
+
+# Délai en ticks (1 tick = 1/20ème de seconde) entre chaque récompense donnée
+# lors de l'utilisation de la commande /shcrates openall.
+# Mettre à 0 pour un don instantané (peut spammer le chat si beaucoup de récompenses).
+# Un délai de 1 ou 2 ticks est généralement bon.
+open_all_delay_ticks: 2
+
+# --- Stockage des Données ---
+storage:
+  # Nom du fichier (dans le dossier du plugin) utilisé pour stocker les emplacements
+  # des blocs de caisse physiques.
+  crate_locations_file: "locations.yml"
+
+  # Type de stockage pour les clés virtuelles des joueurs.
+  # Actuellement, seul "YAML" est implémenté et pleinement supporté.
+  # Options futures potentielles (non implémentées) : SQLITE, MYSQL
+  virtual_keys_storage_type: "YAML" # Ne pas changer sauf si d'autres types sont ajoutés.
+
+# --- Mode de Compatibilité ---
+# Active un mode de compatibilité pour les clés physiques.
+# Si activé, le plugin essaiera de reconnaître les clés basées sur leur nom et lore
+# configurés dans la section 'Key' de chaque caisse, en plus des clés natives SHCrates (avec NBT).
+# UTILE POUR LA TRANSITION DEPUIS UN ANCIEN PLUGIN DE CAISSES.
+# ATTENTION: Ce mode est moins sécurisé car les joueurs pourraient renommer des items pour correspondre.
+# À désactiver une fois la transition terminée.
+compatibility_mode:
+  enabled: false # Mettre à true pour activer
+  # Optionnel: Exiger que le matériau corresponde aussi en mode compatibilité (recommandé)
+  match_material: false
+  # Optionnel: Exiger que le lore corresponde exactement (true) ou juste contienne les lignes (false)
+  match_lore_exactly: false # Si true, l'ordre et le contenu de chaque ligne de lore doivent être identiques.
+                           # Si false, l'item doit juste contenir toutes les lignes de lore configurées (peut être plus flexible).
+
+# Délai en secondes avant qu'un GUI d'animation ne se ferme automatiquement après avoir fini.
+# Cela laisse le temps au joueur de voir sa récompense et de décider de relancer.
+# Mettre à -1 pour désactiver la fermeture automatique.
+auto_close_gui_delay_seconds: -1
+
+# --- Paramètres de Relance (Reroll) ---
+# Permet aux joueurs de relancer une récompense à la fin d'une animation.
+# NE s'applique PAS aux animations QUICKCRATE ou NONE.
+reroll:
+  # Activer ou désactiver la fonctionnalité de relance globalement.
+  enabled: true
+  
+  # Les joueurs auront besoin de la permission 'shcrates.reroll.<cratename>' ou 'shcrates.reroll.*'
+  # et ne pourront relancer qu'une seule fois par ouverture.
+  
+  # Slot où le bouton de relance apparaîtra dans les animations GUI (de 0 à 53).
+  # Assurez-vous que ce slot n'est pas utilisé par le layout de votre animation.
+  # Pour ROULETTE/CSGO (27 slots), 22 (en bas au centre) est un bon choix.
+  # Pour WHEEL (45 slots), 4 (en haut au centre) peut être meilleur.
+  reroll_button_slot: 22
+
+  # Configuration de l'item du bouton de relance.
+  reroll_button:
+    material: "ENDER_EYE"
+    name: "&a&lRELANCER"
+    lore:
+      - "&7Vous avez une chance de relancer."
+      - "&7Cliquez pour essayer d'obtenir"
+      - "&7une meilleure récompense !"
+    glowing: true
+
+  # Configuration du bouton affiché lorsque le joueur a déjà utilisé sa relance.
+  reroll_used_button:
+    material: "BARRIER"
+    name: "&c&lRELANCE UTILISÉE"
+    lore:
+      - "&7Vous avez déjà utilisé votre"
+      - "&7relance pour cette ouverture."

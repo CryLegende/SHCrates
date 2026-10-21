@@ -1,0 +1,149 @@
+# ======================================================================== #
+#                SHCrates - Fichier de Messages (messages.yml)             #
+# ======================================================================== #
+#
+# Vous pouvez utiliser les codes couleurs standards de Minecraft avec '&'.
+# Exemples: &a, &b, &1, &2, &l (gras), &o (italique), etc.
+#
+# Pour désactiver un message, mettez une chaîne vide : ""
+#
+# Placeholders disponibles (liste non exhaustive, dépend du contexte):
+#   %player_name% - Nom du joueur
+#   %player_uuid% - UUID du joueur
+#   %target_player% - Nom du joueur cible
+#   %crate_name% - ID de la caisse (nom du fichier .yml)
+#   %crate_display_name% - Nom d'affichage de la caisse
+#   %key_name% - Nom d'affichage de la clé
+#   %reward_display_name% - Nom d'affichage de la récompense
+#   %amount% - Une quantité numérique
+#   %command% - Une commande
+#   %details% - Détails d'une erreur
+#   %chance% - Chance de gagner une récompense (pour le lore du preview)
+#
+# ======================================================================== #
+
+# Préfixe global pour la plupart des messages du plugin.
+prefix: "" # Laissé vide car le préfixe est ajouté à chaque message individuellement
+
+# --- Messages Généraux et d'Erreur ---
+no_permission: "&7&l« &c&lSH &8&l» &7Vous n'avez pas la permission d'exécuter cette commande ou cette action."
+player_not_found: "&7&l« &c&lSH &8&l» &7Le joueur '&c%player%&7' n'a pas été trouvé ou n'est pas en ligne."
+player_never_played: "&7&l« &c&lSH &8&l» &7Le joueur '&c%player%&7' ne s'est jamais connecté au serveur."
+console_cannot_execute: "&7&l« &c&lSH &8&l» &7Cette commande ne peut être exécutée que par un joueur."
+console_cannot_execute_personal: "&7&l« &c&lSH &8&l» &7La console doit spécifier un nom de joueur pour utiliser cette commande."
+reload_success: "&7&l« &a&lSH &8&l» &7La configuration de SHCrates a été rechargée &aavec succès&7 !"
+reload_failure: "&7&l« &c&lSH &8&l» &7Une erreur est survenue lors du rechargement de la configuration. &cVérifiez la console pour plus de détails&7."
+unknown_command: "&7&l« &c&lSH &8&l» &7Commande inconnue: &c%command%&7. Utilisez &b/shcrates help&7 pour la liste des commandes."
+error_occurred: "&7&l« &c&lSH &8&l» &7Une erreur est survenue: &c%details%"
+error_gui_load: "&7&l« &c&lSH &8&l» &7Erreur lors du chargement du GUI: &c%details%"
+invalid_amount: "&7&l« &c&lSH &8&l» &7Montant invalide: &c%amount%&7."
+invalid_key_type: "&7&l« &c&lSH &8&l» &7Type de clé invalide: &c%type%&7. Utilisez '&bphysical&7' ou '&bvirtual&7'."
+must_look_at_block: "&7&l« &c&lSH &8&l» &7Vous devez regarder un bloc pour utiliser cette commande."
+block_is_not_crate: "&7&l« &c&lSH &8&l» &7Ce bloc n'est pas une caisse SHCrates."
+block_already_crate: "&7&l« &c&lSH &8&l» &7Ce bloc est déjà une caisse de type &c%crate_name%&7."
+no_crates_defined: "&7&l« &c&lSH &8&l» &7Aucune caisse n'est actuellement définie sur le serveur."
+crate_not_exist: "&7&l« &c&lSH &8&l» &7La caisse '&c%crate_name%&7' n'existe pas. Vérifiez les fichiers de configuration."
+key_received_virtual_inventory_full: "&7&l« &6&lSH &8&l» &7Votre inventaire est plein, vous avez reçu une clé virtuelle à la place."
+key_used_physical_multiple_quick: "&7&l« &6&lSH &8&l» &7Vous ouvrez toutes vos clés d'un seul coup."
+
+# --- Interaction avec les Caisses ---
+crate_opened: "&7&l« &d&lSH &8&l» &7Vous avez ouvert une &d%crate_display_name%&7 et gagné &d%reward_display_name%&7!"
+reward_won_log: "%player_name% a gagné: %reward_display_name% de la %crate_display_name%." # Log console, pas de préfixe chat
+no_key_physical: "&7&l« &c&lSH &8&l» &7Vous avez besoin d'une &c%key_name%&7 en main pour ouvrir cette box !"
+no_key_virtual: "&7&l« &c&lSH &8&l» &7Vous n'avez pas de clé virtuelle pour &c%crate_display_name%&7."
+no_key_any: "&7&l« &c&lSH &8&l» &7Vous avez besoin d'une &c%key_name%&7 en main pour ouvrir cette box !"
+key_used_physical: ""
+key_used_virtual: ""
+knockback_message: ""
+cannot_open_creative: "&7&l« &c&lSH &8&l» &7Vous ne pouvez pas ouvrir de box en mode créatif."
+error_no_eligible_reward: "&7&l« &c&lSH &8&l» &7Aucune récompense de la &c%crate_display_name% &7n'est actuellement gagnable pour vous."
+error_already_in_animation: "&7&l« &c&lSH &8&l» &7Vous êtes déjà en train d'ouvrir une caisse !"
+
+# --- Messages de Relance (Reroll) ---
+reroll_successful: "&7&l« &a&lSH &8&l» &7Vous relancez la caisse... Bonne chance !"
+no_permission_reroll: "&7&l« &c&lSH &8&l» &7Vous n'avez pas la permission de relancer cette récompense."
+no_more_rerolls: "&7&l« &c&lSH &8&l» &7Vous avez déjà utilisé votre relance pour cette ouverture."
+reroll_failed_no_reward: "&7&l« &c&lSH &8&l» &7La relance a échoué car aucune autre récompense n'a pu être choisie pour vous."
+
+# /shcrates giveall
+command_usage_giveallkeys: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates giveall <crateName> <amount> [physical|virtual]"
+keys_given_to_all: "&7&l« &a&lSH &8&l» &7Vous avez donné &a%amount% &7clé(s) &a%key_type% %crate_name% &7à &a%player_count% &7joueur(s) en ligne."
+keys_offline_player_not_supported_yet: "&7&l« &c&lSH &8&l» &7Afficher les clés pour un joueur hors ligne n'est pas encore supporté."
+
+# --- Commandes /shcrates ---
+# /shcrates help & list
+command_usage_help_header: "&f&l« &d&lSHCrates Aide &f&l»" # Pas de préfixe standard, c'est un titre
+command_usage_line: "&d%command% &7- %description%" # Ligne de la liste d'aide
+command_usage_admin_header: "&c&lCommandes Administrateur:" # Titre de section
+crate_list_header: "&d&lListe des box disponibles:" # Titre de section
+crate_list_entry: "&7- &d%crate_id% &7(&f%crate_display_name%&7)" # Ligne de la liste de caisses
+
+# /shcrates preview
+command_usage_preview: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates preview <crateName> [player]"
+preview_gui_title: "&8Aperçu: &d%crate_display_name%" # Titre de GUI
+preview_item_lore_chance: "&7Chance: &b%chance%%" # Lore d'item
+preview_item_lore_no_permission_to_win: "&cVous n'avez pas la permission de gagner cet item." # Lore d'item
+preview_item_lore_already_has: "&7&o(( &d&oVous possédez déjà cette récompense &7&o))" # Lore d'item
+preview_no_rewards_eligible_for_player: "&7&l« &c&lSH &8&l» &7Aucune récompense de la caisse &c%crate_display_name% &7n'est actuellement gagnable pour vous."
+
+# /shcrates takekey
+command_usage_takekey: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates takekey <player> <crateName> <amount> [physical|virtual]"
+key_taken_physical_sender: "&7&l« &d&lSH &8&l» &7Vous avez pris &d%amount% &7clé(s) physique(s) &d%crate_name% &7à &d%target_player%&7."
+key_taken_virtual_sender: "&7&l« &d&lSH &8&l» &7Vous avez pris &d%amount% &7clé(s) virtuelle(s) &d%crate_name% &7à &d%target_player%&7."
+key_taken_physical_target: "" # Probablement un message pour le joueur cible, peut être rempli avec préfixe &d
+key_taken_virtual_target: ""  # Idem
+not_enough_keys_to_take: "&7&l« &c&lSH &8&l» &7Le joueur &c%player% &7n'a pas assez de clé(s) &c%key_type% %crate_name% &7pour en retirer autant."
+# keys_offline_player_not_supported_yet: "&cAfficher/modifier les clés pour un joueur hors ligne n'est pas encore supporté." # Doublon, déjà traité plus haut. Je vais le commenter ou le supprimer si c'est le même message.
+key_refunded_physical: "&7&l« &a&lSH &8&l» &7Vous avez récupéré votre &akey&7."
+key_refunded_virtual: "&7&l« &a&lSH &8&l» &7Vous avez récupéré votre &akey virtuelle&7."
+
+# /shcrates open & openall
+command_usage_open: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates open <crateName> [player]"
+command_usage_openall: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates openall <crateName> [player]"
+not_enough_keys_openall: "&7&l« &c&lSH &8&l» &7Vous n'avez que &c%amount% &7clé(s) &c%crate_name%&7 pour en ouvrir plusieurs."
+openall_starting: "&7&l« &d&lSH &8&l» &7Ouverture de &d%amount%&7 caisse(s) &d%crate_name%&7..."
+openall_summary_header: "&a&lRécapitulatif pour %amount% caisse(s) %crate_name% ouvertes:" # Titre de section, pas de préfixe standard
+openall_summary_reward: "&7- &d%reward_name%" # Ligne de résumé
+openall_no_reward_eligible_for_one_roll: "&7&l« &c&lSH &8&l» &7(Pas de récompense éligible pour un tirage)"
+
+# /shcrates keys
+command_usage_keys: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates keys [player]"
+player_keys_header: "&d&lVos Clés de box:" # Titre de section
+player_keys_virtual_format: "&7- &d%crate_name%&7: &b%amount% &7(Virtuelle)" # Ligne de liste
+player_keys_physical_format: "&7- &d%crate_name%&7: &b%amount% &7(Physique)" # Ligne de liste
+player_keys_no_keys: "&7&l« &d&lSH &8&l» &7Vous ne possédez aucune clé SHCrates."
+target_has_no_keys: "&7&l« &d&lSH &8&l» &d%player% &7ne possède aucune clé SHCrates."
+target_keys_header: "&d&lClés de box de %player%&7:" # Titre de section
+no_permission_for_target: "&7&l« &c&lSH &8&l» &c%player% &7n'a pas la permission pour cette action, ou vous n'avez pas la permission de le cibler."
+
+# /shcrates givekey
+command_usage_givekey: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates givekey <player> <crateName> <amount> [physical|virtual]"
+key_given_physical: "&7&l« &a&lSH &8&l» &7Vous avez donné &a%amount% &7clé(s) physique(s) &a%crate_name% &7à &a%target_player%&7." # Message au donneur
+key_received_physical: "" # Message au receveur
+key_given_virtual: "&7&l« &a&lSH &8&l» &7Vous avez donné &a%amount% &7clé(s) virtuelle(s) &a%crate_name% &7à &a%target_player%&7." # Message au donneur
+key_received_virtual:  "" # Message au receveur
+# Dupliqué pour clarté dans CrateCommand, _sender pour celui qui fait la commande (déjà formaté ci-dessus, je vais les laisser tels quels car ce sont les mêmes messages)
+key_given_physical_sender: "&7&l« &a&lSH &8&l» &7Vous avez donné &a%amount% &7clé(s) physique(s) &a%crate_name% &7à &a%target_player%&7."
+key_given_virtual_sender: "&7&l« &a&lSH &8&l» &7Vous avez donné &a%amount% &7clé(s) virtuelle(s) &a%crate_name% &7à &a%target_player%&7."
+
+
+# /shcrates setblock
+command_usage_setblock: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates setblock <crateName>"
+crate_block_set: "&7&l« &a&lSH &8&l» &7Le bloc que vous regardez a été défini comme une caisse &a%crate_name%&7."
+
+# /shcrates removeblock
+command_usage_removeblock: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates removeblock [confirm]"
+crate_block_removed: "&7&l« &a&lSH &8&l» &7La caisse a été retirée du bloc que vous regardez."
+crate_block_removed_by_break: "&7&l« &d&lSH &8&l» &7La caisse &d%crate_name%&7 a été retirée car le bloc a été cassé."
+no_permission_break_crate: "&7&l« &c&lSH &8&l» &7Vous n'avez pas la permission de casser la caisse &c%crate_display_name%&7."
+confirm_remove_crate_location: "&7&l« &d&lSH &8&l» &7Vous êtes sur le point de supprimer une caisse &d%crate_name%&7. Regardez le bloc et retapez &b/shcrates removeblock confirm &7pour confirmer."
+
+# --- Messages d'Animation ---
+# Utilisé par CrateManager lors du parsing de la config de caisse pour AnimationConfig.GUITitle
+animation_gui_title_default: "&8Ouverture de &d%crate_display_name%&8..." # Titre de GUI
+
+# --- Placeholders (pas des messages directs, mais pour info) ---
+# %shcrates_virtual_<cratename>% -> valeur numérique
+# %shcrates_physical_<cratename>% -> valeur numérique
+# %shcrates_virtual_total% -> valeur numérique
+# %shcrates_physical_total% -> valeur numérique

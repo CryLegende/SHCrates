@@ -1,0 +1,41 @@
+name: SHCrates
+version: '${project.version}'
+main: org.Cry_Legende.sHCrates.SHCrates
+api-version: '1.20'
+author: Cry_Legende
+softdepend: [PlaceholderAPI, Vault] # Vault pourrait être utile plus tard pour la monnaie si besoin, PAPI est pour les placeholders
+
+commands:
+  shcrates:
+    description: Commande principale pour SHCrates.
+    aliases: [crate, shcr]
+    permission: shcrates.command.base # Permission de base pour utiliser la commande, des sous-permissions géreront les actions
+    usage: |
+      §cUtilisation incorrecte. Commandes disponibles:
+      §e/shcrates help §7- Affiche cette aide.
+      §e/shcrates list §7- Liste toutes les crates.
+      §e/shcrates preview <crateName> [player] §7- Ouvre le preview d'une crate.
+      §e/shcrates open <crateName> [player] §7- Ouvre une crate.
+      §e/shcrates openall <crateName> [player] §7- Ouvre toutes les clés d'une crate.
+      §e/shcrates givekey <player> <crateName> <amount> [physical|virtual] §7- Donne des clés.
+      §e/shcrates keys [player] §7- Affiche vos clés.
+      §cCommandes Admin:
+      §e/shcrates reload §7- Recharge la configuration du plugin.
+      §e/shcrates setblock <crateName> §7- Définit un bloc comme crate.
+      §e/shcrates removeblock §7- Supprime une crate d'un bloc.
+
+permissions:
+  shcrates.*:
+    description: Donne accès à toutes les fonctionnalités de SHCrates.
+    children:
+      shcrates.admin: true
+      shcrates.command.base: true
+      # Les permissions d'ouverture/preview par crate seront dynamiques (ex: shcrates.open.ordinaire)
+
+  shcrates.admin:
+    description: Permet d'utiliser les commandes d'administration (reload, setblock, removeblock, givekey).
+    default: op
+
+  shcrates.command.base:
+    description: Permet d'utiliser les commandes de base de SHCrates (list, preview, open, openall, keys).
+    default: true
