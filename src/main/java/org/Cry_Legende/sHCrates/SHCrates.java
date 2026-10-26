@@ -11,6 +11,7 @@ import org.Cry_Legende.sHCrates.listeners.BlockBreakListener;
 import org.Cry_Legende.sHCrates.listeners.InventoryClickListener;
 import org.Cry_Legende.sHCrates.listeners.PlayerInteractListener;
 import org.Cry_Legende.sHCrates.listeners.PlayerQuitListener;
+import org.Cry_Legende.sHCrates.listeners.WorldLoadListener;
 import org.Cry_Legende.sHCrates.placeholders.SHCratesExpansion;
 import org.Cry_Legende.sHCrates.storage.PlayerDataManager;
 import org.bukkit.Bukkit;
@@ -81,12 +82,10 @@ public final class SHCrates extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Sauvegarder les données importantes
-        if (playerDataManager != null) {
-            playerDataManager.saveAllPlayerData();
-        }
-        if (crateManager != null) {
-            crateManager.saveCrateLocations(); // Sauvegarder les emplacements physiques des crates
+        // Solder les ouvertures en cours AVANT toute sauvegarde : le plugin étant déjà désactivé,
+        // aucune tâche ne peut plus être planifiée, les récompenses sont donc données tout de suite.
+        if (animationManager != null) {
+            animationManager.finishAllAnimations();
         }
 
         // --- CORRECTION 4 : APPEL AU NETTOYAGE GLOBAL ---
@@ -99,6 +98,14 @@ public final class SHCrates extends JavaPlugin {
         // Fermer les inventaires ouverts par le plugin pour éviter les problèmes
         if (guiManager != null) {
             guiManager.closeAllPluginInventories();
+        }
+
+        // Sauvegarder les données importantes (après les récompenses, qui peuvent donner des clés)
+        if (playerDataManager != null) {
+            playerDataManager.saveAllPlayerData();
+        }
+        if (crateManager != null) {
+            crateManager.saveCrateLocations(); // Sauvegarder les emplacements physiques des crates
         }
 
         getLogger().info("SHCrates v" + getDescription().getVersion() + " has been disabled.");
@@ -115,6 +122,7 @@ public final class SHCrates extends JavaPlugin {
         pm.registerEvents(new InventoryClickListener(this), this);
         pm.registerEvents(new BlockBreakListener(this), this);
         pm.registerEvents(new PlayerQuitListener(this), this);
+        pm.registerEvents(new WorldLoadListener(this), this);
     }
 
     public static SHCrates getInstance() {

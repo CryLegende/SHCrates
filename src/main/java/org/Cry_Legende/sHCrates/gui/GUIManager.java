@@ -285,22 +285,15 @@ public class GUIManager {
     }
 
     public void closeAllPluginInventories() {
-        List<UUID> playersToClosePreview = new ArrayList<>(activePreviewGUIs.keySet());
-        playersToClosePreview.forEach(uuid -> {
-            Player p = Bukkit.getPlayer(uuid);
-            if (p != null && p.getOpenInventory().getTopInventory().getHolder() instanceof PagedGUI) {
+        // Tous les joueurs, pas seulement ceux des maps : une ouverture soldée à l'arrêt n'y figure
+        // plus, et un GUI resté ouvert après désactivation laisserait prendre les items affichés.
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            Inventory top = p.getOpenInventory().getTopInventory();
+            if (top.getHolder(false) instanceof PagedGUI || isAnimationInventory(top)) {
                 p.closeInventory();
             }
-        });
+        }
         activePreviewGUIs.clear();
-
-        List<UUID> playersToCloseAnimation = new ArrayList<>(activeAnimationGUIs.keySet());
-        playersToCloseAnimation.forEach(uuid -> {
-            Player p = Bukkit.getPlayer(uuid);
-            if (p != null && isAnimationInventory(p.getOpenInventory().getTopInventory())) {
-                p.closeInventory();
-            }
-        });
         activeAnimationGUIs.clear();
     }
 
@@ -314,7 +307,7 @@ public class GUIManager {
 
     public boolean isAnimationInventory(Inventory inventory) {
         if (inventory == null) return false;
-        InventoryHolder holder = inventory.getHolder();
+        InventoryHolder holder = inventory.getHolder(false);
         return holder instanceof RouletteAnimation ||
             holder instanceof CSGOAnimation ||
             holder instanceof WheelAnimation;

@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -45,7 +46,9 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
         loadPlayerData(event.getPlayer().getUniqueId());
     }
 
-    @EventHandler
+    // MONITOR : après les autres listeners du quit, dont la récompense d'une ouverture en cours
+    // (qui peut donner des clés) ; sinon l'entrée était recréée dans le cache et jamais libérée.
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         savePlayerData(event.getPlayer().getUniqueId());
         playerDataCache.remove(event.getPlayer().getUniqueId()); // Retirer du cache
@@ -162,16 +165,28 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
 
     public void addVirtualKeys(UUID playerUUID, String crateInternalId, int amount) {
         getPlayerData(playerUUID).addVirtualKeys(crateInternalId, amount);
-        // Sauvegarde immédiate ou périodique ? Pour l'instant, la sauvegarde se fait à la déconnexion ou à l'arrêt.
-        // Si vous voulez une sauvegarde plus fréquente, vous pouvez appeler savePlayerData(playerUUID) ici.
+        // Sauvegarde immédiate (petit fichier) : un crash ne fait plus perdre les clés achetées,
+        // ni « rendre » des clés déjà ouvertes.
+        savePlayerData(playerUUID);
     }
 
     public boolean consumeVirtualKey(UUID playerUUID, String crateInternalId) {
-        return getPlayerData(playerUUID).consumeVirtualKey(crateInternalId);
+        boolean consumed = getPlayerData(playerUUID).consumeVirtualKey(crateInternalId);
+        if (consumed) savePlayerData(playerUUID);
+        return consumed;
     }
 
     public Map<String, Integer> getAllVirtualKeysForPlayer(UUID playerUUID) {
         return getPlayerData(playerUUID).getAllVirtualKeys();
+    }
+
+    /**
+     * Lecture sans mise en cache (placeholders demandés pour un joueur hors ligne) : l'entrée ne serait
+     * jamais retirée du cache puisque ce joueur ne déclenchera pas de PlayerQuitEvent.
+     */
+    public PlayerData peekPlayerData(UUID playerUUID) {
+        PlayerData cached = playerDataCache.get(playerUUID);
+        return cached != null ? cached : loadPlayerDataFromFile(playerUUID);
     }
 
     public int takeVirtualKeys(UUID playerUUID, String crateInternalId, int amountToTake) {

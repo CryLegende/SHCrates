@@ -53,13 +53,43 @@ public class SHCratesExpansion extends PlaceholderExpansion {
         }
         Player player = offlinePlayer.getPlayer(); // Peut être null si le joueur est hors ligne
 
+        // Les totaux sont testés avant virtual_<crate>/physical_<crate>, qui les capturaient
+        // (ils renvoyaient « Crate_Not_Found »).
+        // Placeholder pour le nombre total de clés virtuelles pour toutes les caisses
+        // %shcrates_virtual_total%
+        if (params.equalsIgnoreCase("virtual_total")) {
+            int totalVirtual = 0;
+            Map<String, Integer> allVirtualKeys = playerDataManager.peekPlayerData(offlinePlayer.getUniqueId()).getAllVirtualKeys();
+            for (int count : allVirtualKeys.values()) {
+                totalVirtual += count;
+            }
+            return String.valueOf(totalVirtual);
+        }
+
+        // Placeholder pour le nombre total de clés physiques pour toutes les caisses
+        // %shcrates_physical_total%
+        if (params.equalsIgnoreCase("physical_total")) {
+            if (player == null) {
+                return "Player_Offline";
+            }
+            int totalPhysical = 0;
+            for (Crate crate : crateManager.getAllCrates()) {
+                for (ItemStack item : player.getInventory().getContents()) {
+                    if (crateManager.isPhysicalKey(item, crate)) {
+                        totalPhysical += item.getAmount();
+                    }
+                }
+            }
+            return String.valueOf(totalPhysical);
+        }
+
         // Format: %shcrates_virtual_<cratename>%
         if (params.startsWith("virtual_")) {
             String crateName = params.substring("virtual_".length());
             Optional<Crate> crateOpt = crateManager.getCrate(crateName);
             if (crateOpt.isPresent()) {
                 Crate crate = crateOpt.get();
-                int keyCount = playerDataManager.getVirtualKeys(offlinePlayer.getUniqueId(), crate.getInternalID());
+                int keyCount = playerDataManager.peekPlayerData(offlinePlayer.getUniqueId()).getVirtualKeys(crate.getInternalID());
                 return String.valueOf(keyCount);
             } else {
                 return "Crate_Not_Found";
@@ -86,35 +116,6 @@ public class SHCratesExpansion extends PlaceholderExpansion {
                 return "Crate_Not_Found";
             }
         }
-
-        // Placeholder pour le nombre total de clés virtuelles pour toutes les caisses
-        // %shcrates_virtual_total%
-        if (params.equalsIgnoreCase("virtual_total")) {
-            int totalVirtual = 0;
-            Map<String, Integer> allVirtualKeys = playerDataManager.getAllVirtualKeysForPlayer(offlinePlayer.getUniqueId());
-            for (int count : allVirtualKeys.values()) {
-                totalVirtual += count;
-            }
-            return String.valueOf(totalVirtual);
-        }
-
-        // Placeholder pour le nombre total de clés physiques pour toutes les caisses
-        // %shcrates_physical_total%
-        if (params.equalsIgnoreCase("physical_total")) {
-            if (player == null) {
-                return "Player_Offline";
-            }
-            int totalPhysical = 0;
-            for (Crate crate : crateManager.getAllCrates()) {
-                for (ItemStack item : player.getInventory().getContents()) {
-                    if (crateManager.isPhysicalKey(item, crate)) {
-                        totalPhysical += item.getAmount();
-                    }
-                }
-            }
-            return String.valueOf(totalPhysical);
-        }
-
 
         return null; // Placeholder non reconnu
     }

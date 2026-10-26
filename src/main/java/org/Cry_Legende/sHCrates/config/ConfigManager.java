@@ -102,7 +102,7 @@ public class ConfigManager {
     private void loadRerollButtons() {
         ConfigurationSection rerollButtonSection = config.getConfigurationSection("reroll.reroll_button");
         if (rerollButtonSection != null) {
-            ItemBuilder builder = new ItemBuilder(Material.matchMaterial(rerollButtonSection.getString("material", "ENDER_EYE")))
+            ItemBuilder builder = new ItemBuilder(materialOr(rerollButtonSection.getString("material", "ENDER_EYE"), Material.ENDER_EYE))
                 .setName(rerollButtonSection.getString("name", "&a&lRELANCER"))
                 .setLore(rerollButtonSection.getStringList("lore"));
             if (rerollButtonSection.getBoolean("glowing", true)) {
@@ -115,13 +115,25 @@ public class ConfigManager {
 
         ConfigurationSection rerollUsedButtonSection = config.getConfigurationSection("reroll.reroll_used_button");
         if (rerollUsedButtonSection != null) {
-            rerollUsedButtonItem = new ItemBuilder(Material.matchMaterial(rerollUsedButtonSection.getString("material", "BARRIER")))
+            rerollUsedButtonItem = new ItemBuilder(materialOr(rerollUsedButtonSection.getString("material", "BARRIER"), Material.BARRIER))
                 .setName(rerollUsedButtonSection.getString("name", "&c&lRELANCE UTILISÉE"))
                 .setLore(rerollUsedButtonSection.getStringList("lore"))
                 .build();
         } else {
             rerollUsedButtonItem = new ItemBuilder(Material.BARRIER).setName("&c&lRELANCE UTILISÉE").build(); // Fallback
         }
+    }
+
+    /**
+     * Matériau lu en config, ou le repli s'il est invalide (null faisait planter le chargement).
+     */
+    private Material materialOr(String name, Material fallback) {
+        Material material = name == null ? null : Material.matchMaterial(name);
+        if (material == null) {
+            plugin.getLogger().warning("Invalid reroll button material '" + name + "', using " + fallback + ".");
+            return fallback;
+        }
+        return material;
     }
 
     public void reloadConfigs() {

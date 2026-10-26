@@ -32,15 +32,14 @@ public class InventoryClickListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        Player player = (Player) event.getWhoClicked();
+        if (!(event.getWhoClicked() instanceof Player player)) return;
         Inventory topInventory = event.getView().getTopInventory();
-        if (topInventory == null) return;
 
-        InventoryHolder holder = topInventory.getHolder();
+        // Sans instantané : ce listener voit tous les clics du serveur, y compris dans les coffres
+        InventoryHolder holder = topInventory.getHolder(false);
 
-        if (holder instanceof PagedGUI) {
-            handlePreviewGUIClick(event, player, (PagedGUI) holder);
+        if (holder instanceof PagedGUI pagedGUI) {
+            handlePreviewGUIClick(event, player, pagedGUI);
         } else if (guiManager.isAnimationInventory(topInventory)) {
             handleAnimationGUIClick(event, player);
         }
@@ -104,7 +103,8 @@ public class InventoryClickListener implements Listener {
         AnimationManager.ActiveAnimationInfo animInfo = animationManager.getActiveAnimationInfo(player);
         if (animInfo == null) return;
 
-        // Gérer le clic sur le bouton de relance
+        // Gérer le clic sur le bouton de relance (uniquement dans le GUI, pas dans l'inventaire du joueur)
+        if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (animInfo.isAnimationFinished() && plugin.getConfigManager().isRerollEnabled()) {
             int rerollSlot = animInfo.getCrate().getAnimationConfig().getRerollButtonSlot();
             if (event.getSlot() == rerollSlot) {
@@ -137,7 +137,7 @@ public class InventoryClickListener implements Listener {
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
         Inventory topInventory = event.getView().getTopInventory();
-        if (topInventory != null && (topInventory.getHolder() instanceof PagedGUI || guiManager.isAnimationInventory(topInventory))) {
+        if (topInventory.getHolder(false) instanceof PagedGUI || guiManager.isAnimationInventory(topInventory)) {
             // Empêche de glisser des items dans nos GUIs
             event.setCancelled(true);
         }
@@ -145,15 +145,13 @@ public class InventoryClickListener implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player)) return;
-        Player player = (Player) event.getPlayer();
+        if (!(event.getPlayer() instanceof Player player)) return;
         Inventory topInventory = event.getView().getTopInventory();
-        if (topInventory == null) return;
 
-        InventoryHolder holder = topInventory.getHolder();
+        InventoryHolder holder = topInventory.getHolder(false);
 
-        if (holder instanceof PagedGUI) {
-            guiManager.removeActiveGUI(player, (PagedGUI) holder);
+        if (holder instanceof PagedGUI pagedGUI) {
+            guiManager.removeActiveGUI(player, pagedGUI);
         } else if (guiManager.isAnimationInventory(topInventory)) {
             AnimationManager.ActiveAnimationInfo animInfo = animationManager.getActiveAnimationInfo(player);
 
@@ -161,9 +159,12 @@ public class InventoryClickListener implements Listener {
                 // Si la récompense n'a pas encore été donnée, on la donne.
                 // Cela se produit lorsque le joueur ferme le GUI manuellement après la fin de l'animation,
                 // ou si une action force la fermeture (mort, etc.).
+                // À la déconnexion, cette fermeture précède PlayerQuitEvent : la récompense est donnée
+                // tout de suite, sinon les commandes partiraient au tick suivant, joueur déjà parti.
                 if (!animInfo.isRewardGiven()) {
-                    animationManager.giveReward(player, animInfo.getCrate(), animInfo.getChosenReward(), animInfo.getCrateLocation());
                     animInfo.setRewardGiven(true);
+                    animationManager.giveReward(player, animInfo.getCrate(), animInfo.getChosenReward(), animInfo.getCrateLocation(),
+                        event.getReason() == InventoryCloseEvent.Reason.DISCONNECT);
                 }
 
                 // Nettoie l'état de l'animation pour le joueur (arrête les tâches restantes, etc.).

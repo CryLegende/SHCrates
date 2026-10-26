@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -27,8 +28,19 @@ public class CrateConfigManager {
             if (cratesFolder.mkdirs()) {
                 plugin.getLogger().info("Crates folder created at: " + cratesFolder.getPath());
                 // Vous pouvez copier un exemple de fichier de crate ici si vous le souhaitez
-                plugin.saveResource("crates/ordinaire.yml", false);
-                plugin.saveResource("crates/rare.yml", false); // Exemple
+                // Seuls les exemples réellement présents dans le jar (rare.yml n'y est pas : saveResource levait
+                // une exception et empêchait le plugin de démarrer sur une installation neuve)
+                for (String example : new String[]{"crates/ordinaire.yml", "crates/rare.yml"}) {
+                    boolean present;
+                    try (InputStream in = plugin.getResource(example)) {
+                        present = in != null;
+                    } catch (IOException e) {
+                        present = false;
+                    }
+                    if (present) {
+                        plugin.saveResource(example, false);
+                    }
+                }
             } else {
                 plugin.getLogger().severe("Could not create crates folder!");
             }

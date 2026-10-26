@@ -10,6 +10,7 @@ import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -22,6 +23,9 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -34,9 +38,26 @@ public class CrateManager {
     private final CrateConfigManager crateConfigManager;
 
     private final Map<String, Crate> loadedCrates = new HashMap<>();
-    private final List<CrateLocation> crateLocations = new ArrayList<>();
+    // Index des caisses posées, par monde (en minuscules) et coordonnées de bloc
+    private final Map<BlockKey, CrateLocation> crateLocations = new LinkedHashMap<>();
+    // Entrées de locations.yml inutilisables pour l'instant (type de caisse non chargé, entrée incomplète) :
+    // réécrites telles quelles à chaque sauvegarde pour ne jamais les perdre
+    private final List<Object> unresolvedLocationEntries = new ArrayList<>();
+    // Mondes pas encore chargés au démarrage qui portent des caisses (nom en minuscules -> nombre)
+    private final Map<String, Integer> pendingWorlds = new HashMap<>();
     private File locationsFile;
     private FileConfiguration locationsConfig;
+
+    private record BlockKey(String world, int x, int y, int z) {
+        static BlockKey of(CrateLocation crateLoc) {
+            return new BlockKey(crateLoc.getWorldName().toLowerCase(Locale.ROOT), crateLoc.getX(), crateLoc.getY(), crateLoc.getZ());
+        }
+
+        static BlockKey of(Location location) {
+            return new BlockKey(location.getWorld().getName().toLowerCase(Locale.ROOT),
+                location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        }
+    }
 
     public CrateManager(SHCrates plugin) {
         this.plugin = plugin;
@@ -329,38 +350,106 @@ public class CrateManager {
         return Collections.unmodifiableCollection(loadedCrates.values());
     }
 
+    /**
+     * Charge locations.yml. Une caisse dont le monde n'est pas encore chargé reste indexée par nom de monde
+     * (elle devient utilisable dès que le monde arrive) ; une caisse dont le type n'est pas chargé est
+     * conservée telle quelle. Rien n'est jamais retiré du fichier à cause d'un monde ou d'un type absent.
+     */
     public void loadCrateLocations() {
         crateLocations.clear();
+        unresolvedLocationEntries.clear();
+        pendingWorlds.clear();
         if (locationsFile == null || !locationsFile.exists()) return;
-        locationsConfig = YamlConfiguration.loadConfiguration(locationsFile);
-        ConfigurationSection locSection = locationsConfig.getConfigurationSection("locations");
-        if (locSection != null) {
-            for (String key : locSection.getKeys(false)) {
-                String worldName = locSection.getString(key + ".world");
-                World world = (worldName != null) ? Bukkit.getWorld(worldName) : null;
-                if (world != null) {
-                    Location loc = new Location(world, locSection.getDouble(key + ".x"), locSection.getDouble(key + ".y"), locSection.getDouble(key + ".z"));
-                    String crateId = locSection.getString(key + ".crateId");
-                    if (crateId != null && loadedCrates.containsKey(crateId.toLowerCase())) {
-                        crateLocations.add(new CrateLocation(loc, crateId));
-                    }
-                }
+
+        YamlConfiguration config = new YamlConfiguration();
+        try {
+            config.load(locationsFile);
+        } catch (IOException | InvalidConfigurationException e) {
+            backupUnreadableLocationsFile(e);
+            return;
+        }
+        locationsConfig = config;
+
+        ConfigurationSection locSection = config.getConfigurationSection("locations");
+        if (locSection == null) return;
+        for (String key : locSection.getKeys(false)) {
+            ConfigurationSection entry = locSection.getConfigurationSection(key);
+            String worldName = entry != null ? entry.getString("world") : null;
+            String crateId = entry != null ? entry.getString("crateId") : null;
+            if (worldName == null || crateId == null) {
+                plugin.getLogger().warning("Crate location '" + key + "' in " + locationsFile.getName() + " is incomplete (world or crateId missing), kept as is.");
+                unresolvedLocationEntries.add(toRawValue(locSection.get(key)));
+                continue;
+            }
+            if (!loadedCrates.containsKey(crateId.toLowerCase())) {
+                plugin.getLogger().warning("Crate location '" + key + "' uses crate type '" + crateId + "' which is not loaded, kept as is.");
+                unresolvedLocationEntries.add(toRawValue(entry));
+                continue;
+            }
+            CrateLocation crateLoc = new CrateLocation(worldName,
+                (int) Math.floor(entry.getDouble("x")), (int) Math.floor(entry.getDouble("y")), (int) Math.floor(entry.getDouble("z")),
+                crateId);
+            crateLocations.putIfAbsent(BlockKey.of(crateLoc), crateLoc);
+            if (Bukkit.getWorld(worldName) == null) {
+                pendingWorlds.merge(worldName.toLowerCase(Locale.ROOT), 1, Integer::sum);
             }
         }
+        pendingWorlds.forEach((world, count) -> plugin.getLogger().info(count + " crate(s) waiting for world '" + world + "' to load."));
+    }
+
+    /**
+     * Appelé au chargement d'un monde (WorldLoadEvent) : les caisses de ce monde, déjà indexées, deviennent actives.
+     */
+    public void onWorldLoaded(World world) {
+        Integer count = pendingWorlds.remove(world.getName().toLowerCase(Locale.ROOT));
+        if (count != null) {
+            plugin.getLogger().info("World '" + world.getName() + "' loaded: " + count + " crate(s) now active.");
+        }
+    }
+
+    /**
+     * locations.yml illisible : on le copie à côté avant qu'une sauvegarde ne l'écrase.
+     */
+    private void backupUnreadableLocationsFile(Exception cause) {
+        File backup = new File(locationsFile.getParentFile(), locationsFile.getName() + ".illisible-"
+            + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()));
+        try {
+            Files.copy(locationsFile.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            plugin.getLogger().log(Level.SEVERE, "Could not read " + locationsFile.getName() + ", copy kept as " + backup.getName() + ". No crate location loaded.", cause);
+        } catch (IOException e) {
+            plugin.getLogger().log(Level.SEVERE, "Could not read " + locationsFile.getName() + " nor back it up.", e);
+        }
+    }
+
+    /**
+     * Copie brute d'une entrée YAML (section -> map) pour pouvoir la réécrire à l'identique.
+     */
+    private static Object toRawValue(Object value) {
+        if (value instanceof ConfigurationSection section) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> e : section.getValues(false).entrySet()) {
+                map.put(e.getKey(), toRawValue(e.getValue()));
+            }
+            return map;
+        }
+        return value;
     }
 
     public void saveCrateLocations() {
         if (locationsFile == null) setupLocationsFile();
         FileConfiguration newConfig = new YamlConfiguration();
         ConfigurationSection locSection = newConfig.createSection("locations");
-        for (int i = 0; i < crateLocations.size(); i++) {
-            CrateLocation crateLoc = crateLocations.get(i);
-            String path = String.valueOf(i);
-            locSection.set(path + ".world", crateLoc.getLocation().getWorld().getName());
-            locSection.set(path + ".x", crateLoc.getLocation().getX());
-            locSection.set(path + ".y", crateLoc.getLocation().getY());
-            locSection.set(path + ".z", crateLoc.getLocation().getZ());
+        int i = 0;
+        for (CrateLocation crateLoc : crateLocations.values()) {
+            String path = String.valueOf(i++);
+            locSection.set(path + ".world", crateLoc.getWorldName());
+            locSection.set(path + ".x", (double) crateLoc.getX());
+            locSection.set(path + ".y", (double) crateLoc.getY());
+            locSection.set(path + ".z", (double) crateLoc.getZ());
             locSection.set(path + ".crateId", crateLoc.getCrateId());
+        }
+        for (Object raw : unresolvedLocationEntries) {
+            locSection.set(String.valueOf(i++), raw);
         }
         try {
             newConfig.save(locationsFile);
@@ -373,7 +462,8 @@ public class CrateManager {
     public boolean addCrateLocation(Location location, String crateId) {
         if (isCrateLocation(location)) return false;
         if (getCrate(crateId).isPresent()) {
-            crateLocations.add(new CrateLocation(location.getBlock().getLocation(), crateId));
+            CrateLocation crateLoc = new CrateLocation(location, crateId);
+            crateLocations.put(BlockKey.of(crateLoc), crateLoc);
             saveCrateLocations();
             return true;
         }
@@ -381,15 +471,15 @@ public class CrateManager {
     }
 
     public boolean removeCrateLocation(Location location) {
-        boolean removed = crateLocations.removeIf(cl -> cl.getLocation().equals(location.getBlock().getLocation()));
+        if (location == null || location.getWorld() == null) return false;
+        boolean removed = crateLocations.remove(BlockKey.of(location)) != null;
         if (removed) saveCrateLocations();
         return removed;
     }
 
     public Optional<CrateLocation> getCrateLocation(Location location) {
-        if (location == null) return Optional.empty();
-        Location blockLocation = location.getBlock().getLocation();
-        return crateLocations.stream().filter(cl -> cl.getLocation().equals(blockLocation)).findFirst();
+        if (location == null || location.getWorld() == null) return Optional.empty();
+        return Optional.ofNullable(crateLocations.get(BlockKey.of(location)));
     }
 
     public boolean isCrateLocation(Location location) {

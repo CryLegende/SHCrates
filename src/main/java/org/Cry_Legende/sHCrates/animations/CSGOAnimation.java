@@ -9,6 +9,7 @@ import org.Cry_Legende.sHCrates.crates.config.AnimationConfig;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
+import org.Cry_Legende.sHCrates.utils.SoundUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -253,10 +254,9 @@ public class CSGOAnimation implements Animation, InventoryHolder {
 
     private void playSound(Player player, Location location, String soundName) {
         if (soundName == null || soundName.isEmpty()) return;
-        try {
-            player.playSound(location, Sound.valueOf(soundName.toUpperCase()), 1f, 1f);
-        } catch (IllegalArgumentException e) {
-            // Silence pour éviter le spam console
-        }
+        // Ancien nom ou clé du son ; son inconnu ignoré en silence, comme avant
+        Sound sound = SoundUtils.sound(soundName);
+        if (sound == null) return;
+        player.playSound(location, sound, 1f, 1f);
     }
 }

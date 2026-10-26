@@ -79,15 +79,11 @@ public class AnimationManager {
     }
 
     public boolean attemptStartCrateOpening(Player player, Crate crate, Location crateLocation, boolean isQuickOpenAll) {
-        String requestedAnimationType = crate.getAnimationConfig().getType().toUpperCase();
-
+        // Seules les animations en GUI sont suivies ici (récompense pas encore donnée) : on ne les
+        // interrompt jamais, sinon la récompense déjà payée par la clé serait perdue.
         if (isPlayerInAnimation(player)) {
-            if ("QUICKCRATE".equals(requestedAnimationType)) {
-                stopAnimationForPlayer(player, false);
-            } else {
-                messageManager.sendMessage(player, "error_already_in_animation");
-                return false;
-            }
+            messageManager.sendMessage(player, "error_already_in_animation");
+            return false;
         }
 
         ItemStack itemInHand = player.getInventory().getItemInMainHand();
@@ -143,30 +139,37 @@ public class AnimationManager {
         if (usedVirtualKey)
             messageManager.sendMessage(player, "key_used_virtual", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
         if (isInstantAnimation) {
+            // Récompense donnée tout de suite : l'ouverture n'a pas besoin d'être suivie. L'enregistrer
+            // bloquait le joueur (« déjà en train d'ouvrir ») quand un autre joueur relançait la même
+            // QuickCrate avant la fin de l'affichage, car le callback de fin n'était alors jamais appelé.
             giveReward(player, crate, chosenReward, crateLocation);
             animationInfo.setRewardGiven(true);
+        } else {
+            activeAnimations.put(player.getUniqueId(), animationInfo);
         }
 
-        activeAnimations.put(player.getUniqueId(), animationInfo);
-
-        Runnable onAnimationFinish = () -> {
-            ActiveAnimationInfo currentInfo = getActiveAnimationInfo(player);
-            if (currentInfo != null) {
-                currentInfo.setAnimationFinished(true);
-                if (isInstantAnimation) {
-                    activeAnimations.remove(player.getUniqueId());
-                }
-            }
-        };
+        // Ne touche que sa propre ouverture, jamais celle qui serait enregistrée entre-temps
+        Runnable onAnimationFinish = () -> animationInfo.setAnimationFinished(true);
 
         try {
             animation.play(player, crate, crateLocation, chosenReward, onAnimationFinish);
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Error playing animation " + animation.getName(), e);
+            activeAnimations.remove(player.getUniqueId(), animationInfo);
+            animation.stop(player, false);
             if (!animationInfo.isRewardGiven()) {
+                animationInfo.setRewardGiven(true);
                 giveReward(player, crate, chosenReward, crateLocation);
             }
-            activeAnimations.remove(player.getUniqueId());
+            return;
+        }
+
+        // GUI refusé (InventoryOpenEvent annulé par un autre plugin) : sans inventaire ouvert, la récompense
+        // ne serait donnée qu'à la déconnexion et le joueur resterait bloqué « en ouverture ».
+        if (!isInstantAnimation && activeAnimations.get(player.getUniqueId()) == animationInfo
+            && !guiManager.isAnimationInventory(player.getOpenInventory().getTopInventory())) {
+            plugin.getLogger().warning("Animation GUI for " + player.getName() + " did not open, reward given directly.");
+            stopAnimationForPlayer(player, true);
         }
     }
 
@@ -203,12 +206,7 @@ public class AnimationManager {
 
         // Relancer l'animation sans consommer de nouvelle clé
         try {
-            Runnable onAnimationFinish = () -> {
-                ActiveAnimationInfo currentInfo = getActiveAnimationInfo(player);
-                if (currentInfo != null) {
-                    currentInfo.setAnimationFinished(true);
-                }
-            };
+            Runnable onAnimationFinish = () -> animInfo.setAnimationFinished(true);
             animInfo.getAnimation().play(player, crate, animInfo.getCrateLocation(), newReward, onAnimationFinish);
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Error during reroll animation for " + player.getName(), e);
@@ -221,9 +219,21 @@ public class AnimationManager {
     }
 
     public void giveReward(Player player, Crate crate, Reward reward, Location physicalCrateLocation) {
-        if (!player.isOnline() || reward == null) return;
+        giveReward(player, crate, reward, physicalCrateLocation, false);
+    }
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
+    /**
+     * @param immediate true quand le joueur ne sera plus là au tick suivant (déconnexion, arrêt) :
+     *                  les commandes de récompense sont alors exécutées tout de suite.
+     */
+    public void giveReward(Player player, Crate crate, Reward reward, Location physicalCrateLocation, boolean immediate) {
+        if (reward == null) return;
+        if (!player.isOnline()) {
+            plugin.getLogger().warning(String.format("Reward %s from %s NOT given: %s is offline.", reward.getDisplayName(), crate.getDisplayName(), player.getName()));
+            return;
+        }
+
+        Runnable give = () -> {
             messageManager.sendMessage(player, "crate_opened", MessageManager.ph("%crate_display_name%", crate.getDisplayName(), "%reward_display_name%", reward.getDisplayName()));
             for (String cmd : reward.getCommands()) {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("%player_name%", player.getName()));
@@ -237,7 +247,13 @@ public class AnimationManager {
             if (reward.hasFireworkOnWin() && physicalCrateLocation != null) {
                 spawnFirework(physicalCrateLocation.clone().add(0.5, 1.5, 0.5));
             }
-        });
+        };
+        // Plugin en cours d'arrêt : runTask lèverait une exception et la récompense serait perdue
+        if (immediate || !plugin.isEnabled()) {
+            give.run();
+        } else {
+            Bukkit.getScheduler().runTask(plugin, give);
+        }
     }
 
     public void spawnFirework(Location location) {
@@ -251,13 +267,34 @@ public class AnimationManager {
         });
     }
 
+    /**
+     * @param giveRewardIfApplicable true pour donner la récompense pas encore donnée, immédiatement
+     *                               (utilisé à la déconnexion, où le joueur ne sera plus là au tick suivant).
+     */
     public void stopAnimationForPlayer(Player player, boolean giveRewardIfApplicable) {
         ActiveAnimationInfo animInfo = activeAnimations.remove(player.getUniqueId());
         if (animInfo != null) {
             animInfo.getAnimation().stop(player, false);
             if (giveRewardIfApplicable && !animInfo.isRewardGiven()) {
-                giveReward(player, animInfo.getCrate(), animInfo.getChosenReward(), animInfo.getCrateLocation());
                 animInfo.setRewardGiven(true);
+                giveReward(player, animInfo.getCrate(), animInfo.getChosenReward(), animInfo.getCrateLocation(), true);
+            }
+        }
+    }
+
+    /**
+     * Arrêt du plugin : toutes les ouvertures en cours sont soldées, récompense comprise.
+     */
+    public void finishAllAnimations() {
+        for (UUID uuid : new ArrayList<>(activeAnimations.keySet())) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                stopAnimationForPlayer(player, true);
+            } else {
+                ActiveAnimationInfo animInfo = activeAnimations.remove(uuid);
+                if (animInfo != null && !animInfo.isRewardGiven()) {
+                    plugin.getLogger().warning("Reward " + animInfo.getChosenReward().getDisplayName() + " NOT given: player " + uuid + " is offline.");
+                }
             }
         }
     }

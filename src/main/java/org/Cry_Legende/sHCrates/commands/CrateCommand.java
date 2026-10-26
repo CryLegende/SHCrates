@@ -252,18 +252,15 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 messageManager.sendMessage(sender, "no_permission");
                 return;
             }
-            OfflinePlayer offlineTarget = Bukkit.getOfflinePlayer(args[1]);
-            if (!offlineTarget.hasPlayedBefore() && !offlineTarget.isOnline()) {
-                messageManager.sendMessage(sender, "player_never_played", MessageManager.ph("%player%", args[1]));
-                return;
-            }
-            targetPlayer = offlineTarget.getPlayer();
-            if (targetPlayer == null && offlineTarget.isOnline()) {
-                messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[1]));
-                return;
-            }
-            if (targetPlayer == null && !offlineTarget.isOnline()) {
-                messageManager.sendMessage(sender, "keys_offline_player_not_supported_yet");
+            targetPlayer = Bukkit.getPlayerExact(args[1]);
+            if (targetPlayer == null) {
+                // Cache local uniquement : getOfflinePlayer(String) peut interroger Mojang sur le thread principal
+                OfflinePlayer offlineTarget = Bukkit.getOfflinePlayerIfCached(args[1]);
+                if (offlineTarget == null || !offlineTarget.hasPlayedBefore()) {
+                    messageManager.sendMessage(sender, "player_never_played", MessageManager.ph("%player%", args[1]));
+                } else {
+                    messageManager.sendMessage(sender, "keys_offline_player_not_supported_yet");
+                }
                 return;
             }
         } else {

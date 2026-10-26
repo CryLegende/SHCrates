@@ -9,6 +9,7 @@ import org.Cry_Legende.sHCrates.crates.config.AnimationConfig;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
+import org.Cry_Legende.sHCrates.utils.SoundUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -290,10 +291,9 @@ public class WheelAnimation implements Animation, InventoryHolder {
 
     private void playSound(Player player, Location location, String soundName) {
         if (soundName == null || soundName.isEmpty()) return;
-        try {
-            player.playSound(location, Sound.valueOf(soundName.toUpperCase()), 0.8f, 1.0f + (random.nextFloat() * 0.4f - 0.2f));
-        } catch (IllegalArgumentException e) {
-            // Silence
-        }
+        // Ancien nom ou clé du son ; son inconnu ignoré en silence, comme avant
+        Sound sound = SoundUtils.sound(soundName);
+        if (sound == null) return;
+        player.playSound(location, sound, 0.8f, 1.0f + (random.nextFloat() * 0.4f - 0.2f));
     }
 }
