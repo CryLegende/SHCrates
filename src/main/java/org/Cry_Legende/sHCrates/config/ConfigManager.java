@@ -32,6 +32,7 @@ public class ConfigManager {
 
     // Logging
     private boolean logRewardsToConsole;
+    private String rewardLogFormat;
 
     // Opening settings
     private int openAllDelayTicks;
@@ -76,6 +77,7 @@ public class ConfigManager {
         knockbackStrength = config.getDouble("knockback_on_no_key.strength", 0.5);
 
         logRewardsToConsole = config.getBoolean("log_rewards_to_console", true);
+        rewardLogFormat = config.getString("reward_log_format", "%player_name% gagne %reward_name%");
         openAllDelayTicks = config.getInt("open_all_delay_ticks", 2);
         autoCloseGUIDelaySeconds = config.getInt("auto_close_gui_delay_seconds", 7);
 
@@ -176,6 +178,10 @@ public class ConfigManager {
 
     public double getKnockbackStrength() {
         return knockbackStrength;
+    }
+
+    public String getRewardLogFormat() {
+        return rewardLogFormat;
     }
 
     public boolean isLogRewardsToConsole() {

@@ -8,6 +8,7 @@ import org.Cry_Legende.sHCrates.crates.Reward;
 import org.Cry_Legende.sHCrates.crates.CrateManager;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
 import org.Cry_Legende.sHCrates.storage.PlayerDataManager;
+import org.Cry_Legende.sHCrates.utils.ActionLog;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -241,6 +242,9 @@ public class AnimationManager {
             for (String msg : reward.getMessages()) {
                 player.sendMessage(ChatUtils.colorize(msg.replace("%player_name%", player.getName())));
             }
+            ActionLog.write(plugin, crate.getLogFile(), configManager.getRewardLogFormat()
+                    .replace("%player_name%", player.getName())
+                    .replace("%reward_name%", reward.getDisplayName()));
             if (configManager.isLogRewardsToConsole()) {
                 plugin.getLogger().info(String.format("%s won: %s from %s", player.getName(), reward.getDisplayName(), crate.getDisplayName()));
             }

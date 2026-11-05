@@ -105,7 +105,7 @@ public class RouletteAnimation implements Animation, InventoryHolder {
     private void setupInitialGUI(Inventory gui) {
         gui.clear();
         ItemStack filler = new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setName(" ").build();
-        ItemStack picker = new ItemBuilder(Material.REDSTONE_BLOCK).setName("&c▼ CE SERA CET ITEM ▼").build();
+        ItemStack picker = new ItemBuilder(Material.REDSTONE_BLOCK).setName(plugin.getMessageManager().getRawMessage("animation_roulette_pointer")).build();
         for (int i = 0; i < GUI_SIZE; i++) {
             gui.setItem(i, filler);
         }

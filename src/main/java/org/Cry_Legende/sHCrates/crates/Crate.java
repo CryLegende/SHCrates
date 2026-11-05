@@ -24,6 +24,7 @@ public class Crate {
     private final List<Reward> rewards;
     private double totalChanceWeight;
     private ItemStack physicalKeyItem;
+    private String logFile;
 
     public Crate(String id, String displayName, Material blockType, CrateKey keyConfig,
                  PreviewGUIConfig previewGUIConfig, AnimationConfig animationConfig) {
@@ -35,6 +36,7 @@ public class Crate {
         this.animationConfig = animationConfig;
         this.rewards = new ArrayList<>();
         this.internalID = UUID.randomUUID().toString();
+        this.logFile = id;
     }
 
     public void addReward(Reward reward) {
@@ -43,6 +45,14 @@ public class Crate {
 
     public void calculateTotalChanceWeight() {
         this.totalChanceWeight = rewards.stream().mapToDouble(Reward::getChance).sum();
+    }
+
+    public String getLogFile() {
+        return logFile;
+    }
+
+    public void setLogFile(String logFile) {
+        this.logFile = logFile;
     }
 
     public String getId() {

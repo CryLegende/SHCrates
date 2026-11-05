@@ -20,7 +20,11 @@ Utilisé sur : **Opale**.
 
 ## Dépendances
 
-- Optionnelles : `PlaceholderAPI`, `Vault`
+- Optionnelles : `PlaceholderAPI`, `Vault`, `SHLogs`
+
+## Logs
+
+Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (`LogFile` dans le fichier de la caisse, par défaut le nom du fichier). Le texte de la ligne se règle avec `reward_log_format`. Sans SHLogs, la ligne est écrite dans la console.
 
 ## Commandes
 

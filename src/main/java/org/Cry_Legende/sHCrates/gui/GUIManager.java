@@ -57,19 +57,7 @@ public class GUIManager {
             .map(reward -> prepareRewardDisplayItem(reward, player, crate)) // Préparer l'item avec lore dynamique
             .collect(Collectors.toList());
 
-        // --- MODIFICATION ICI ---
-        // On continue même si rewardItems est vide. PagedGUI gérera une liste vide.
-        // if (rewardItems.isEmpty() && crate.getRewards().stream().anyMatch(Reward::isDisplayInPreview)) {
-        //     // Ce cas est pour quand il y A des récompenses à afficher, mais le joueur ne peut en voir aucune (ex: permissions)
-        //     // On pourrait envoyer un message spécifique, mais on ouvre quand même le GUI vide.
-        //     // player.sendMessage("Vous ne pouvez actuellement gagner aucune récompense de cette caisse.");
-        // } else if (rewardItems.isEmpty()) {
-        //     messageManager.sendMessage(player, "preview_no_rewards_displayable", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
-        //     // NE PAS RETOURNER ICI, on veut ouvrir le GUI quand même
-        // }
-        // Le message "preview_no_rewards_displayable" pourrait être affiché via un item dans le GUI vide,
-        // ou on peut simplement le laisser vide (avec fillers et boutons).
-
+        // Le GUI s'ouvre même sans récompense à afficher : PagedGUI gère une liste vide.
         String title = ChatUtils.colorize(guiConfig.getTitle().replace("%crate_display_name%", crate.getDisplayName()));
         // PagedGUI accepte une liste vide de rewardItems.
         PagedGUI pagedGUI = new PagedGUI(player, crate, title, guiConfig.getSize(), rewardItems, guiConfig.getItemsPerPage(), page);
@@ -82,10 +70,10 @@ public class GUIManager {
         // Envoyer le message s'il n'y a rien à afficher APRÈS avoir préparé le GUI
         if (rewardItems.isEmpty() && crate.getRewards().stream().anyMatch(Reward::isDisplayInPreview)) {
             // Ce message indique que des récompenses existent mais ne sont pas visibles/gagnables par CE joueur.
-            messageManager.sendMessage(player, "preview_no_rewards_eligible_for_player", MessageManager.ph("%crate_display_name%", crate.getDisplayName())); // Ajouter message
+            messageManager.sendMessage(player, "preview_no_rewards_eligible_for_player", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
         } else if (crate.getRewards().isEmpty()) {
             // Ce message indique que la caisse n'a AUCUNE récompense définie.
-            messageManager.sendMessage(player, "preview_crate_is_empty", MessageManager.ph("%crate_display_name%", crate.getDisplayName())); // Ajouter message
+            messageManager.sendMessage(player, "preview_crate_is_empty", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
         }
     }
 

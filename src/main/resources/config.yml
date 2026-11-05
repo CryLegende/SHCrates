@@ -2,9 +2,43 @@
 #                  SHCrates - Configuration Principale                     #
 # ======================================================================== #
 #
+# Plugin : caisses à récompenses avec clés physiques ou virtuelles, aperçu
+# des lots et ouverture multiple.
+#
 # Ce fichier contient les paramètres globaux du plugin SHCrates.
 # Pour la configuration des caisses individuelles, voir le dossier 'crates/'.
 # Pour les messages, voir 'messages.yml'.
+#
+# Commandes (/shcrates, alias /crate et /shcr) :
+#   /shcrates help                                                   Affiche l'aide.
+#   /shcrates list                                                   Liste les caisses.
+#   /shcrates preview <caisse> [joueur]                              Ouvre l'aperçu d'une caisse.
+#   /shcrates open <caisse> [joueur]                                 Ouvre une caisse.
+#   /shcrates openall <caisse> [joueur]                              Ouvre toutes les clés d'une caisse.
+#   /shcrates keys [joueur]                                          Affiche les clés d'un joueur.
+#   /shcrates givekey <joueur> <caisse> <nombre> [physical|virtual]  Donne des clés à un joueur.
+#   /shcrates takekey <joueur> <caisse> <nombre> [physical|virtual]  Retire des clés à un joueur.
+#   /shcrates giveall <caisse> <nombre> [physical|virtual]           Donne des clés à tous les joueurs en ligne.
+#   /shcrates setblock <caisse>                                      Définit le bloc visé comme caisse.
+#   /shcrates removeblock [confirm]                                  Retire la caisse du bloc visé.
+#   /shcrates reload                                                 Recharge la configuration.
+#
+# Permissions :
+#   shcrates.command.base           Utiliser /shcrates (par défaut : tous les joueurs).
+#   shcrates.command.list           /shcrates list
+#   shcrates.command.keys           /shcrates keys
+#   shcrates.command.keys.others    /shcrates keys <joueur>
+#   shcrates.open.<caisse|*>        Ouvrir une caisse.
+#   shcrates.preview.<caisse|*>     Voir l'aperçu d'une caisse.
+#   shcrates.reroll.<caisse|*>      Relancer une récompense.
+#   shcrates.removeblock.<caisse>   Casser le bloc d'une caisse.
+#   shcrates.admin                  Toutes les commandes d'administration (par défaut : op).
+#   shcrates.admin.<commande>       Une commande d'administration : givekey, takekey, giveall,
+#                                   setblock, removeblock, reload.
+#   shcrates.admin.previewothers    Ouvrir l'aperçu d'un autre joueur.
+#   shcrates.admin.openothers       Ouvrir une caisse pour un autre joueur.
+#   shcrates.admin.keysothers       Voir les clés d'un autre joueur.
+#   shcrates.admin.creativebypass   Ouvrir une caisse en mode créatif.
 #
 # ======================================================================== #
 
@@ -40,6 +74,11 @@ knockback_on_no_key:
 
 # Activer le log des récompenses gagnées par les joueurs dans la console du serveur.
 log_rewards_to_console: true
+
+# Ligne écrite dans SHLogs pour chaque récompense gagnée.
+# Le fichier de log de chaque caisse se règle avec LogFile dans crates/.
+# Variables : %player_name%, %reward_name%.
+reward_log_format: "%player_name% gagne %reward_name%"
 
 # Délai en ticks (1 tick = 1/20ème de seconde) entre chaque récompense donnée
 # lors de l'utilisation de la commande /shcrates openall.

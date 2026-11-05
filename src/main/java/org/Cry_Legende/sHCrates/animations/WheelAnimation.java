@@ -131,7 +131,7 @@ public class WheelAnimation implements Animation, InventoryHolder {
                 gui.setItem(WHEEL_SLOTS[i], wheelItems.get(i));
             }
         }
-        gui.setItem(CURSOR_SLOT, new ItemBuilder(Material.BEACON).setName("&eSpinning...").build());
+        gui.setItem(CURSOR_SLOT, new ItemBuilder(Material.BEACON).setName(plugin.getMessageManager().getRawMessage("animation_wheel_cursor")).build());
     }
 
     private List<ItemStack> prepareWheelItems(List<Reward> eligibleRewards, int wheelSize) {

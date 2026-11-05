@@ -150,6 +150,7 @@ public class CrateManager {
         PreviewGUIConfig previewGUIConfig = parsePreviewGUIConfig(config.getConfigurationSection("PreviewGUI"), displayName, id);
         AnimationConfig animationConfig = parseAnimationConfig(config.getConfigurationSection("Animation"), displayName, id);
         Crate crate = new Crate(id, displayName, blockType, keyConfig, previewGUIConfig, animationConfig);
+        crate.setLogFile(config.getString("LogFile", id));
         ConfigurationSection rewardsSection = config.getConfigurationSection("Rewards");
         if (rewardsSection != null) {
             for (String rewardKey : rewardsSection.getKeys(false)) {
