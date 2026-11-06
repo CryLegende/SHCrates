@@ -99,7 +99,7 @@ Animation:
 # SpinDurationTicks: 100 # Non applicable pour QuickCrate
 # SoundOpen: "BLOCK_CHEST_OPEN" # À définir si vous voulez des sons spécifiques
 # SoundSpin: "ENTITY_EXPERIENCE_ORB_PICKUP"
-# SoundWin: "ENTITY_PLAYER_LEVELUP"
+  SoundWin: ENTITY_EXPERIENCE_ORB_PICKUP
   QuickCrateAnimation:
     Enabled: true # Car CrateType est QuickCrate
     DurationSeconds: 3

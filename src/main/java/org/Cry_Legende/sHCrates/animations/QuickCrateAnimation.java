@@ -144,6 +144,9 @@ public class QuickCrateAnimation implements Animation {
                 if (shouldEnd) {
                     plugin.getAnimationManager().clearDisplayEntities(blockKeyLocation);
                     activeAnimationTasks.remove(blockKeyLocation);
+                    if (player.isOnline()) {
+                        playSound(player, player.getLocation(), crate.getAnimationConfig().getSoundWin());
+                    }
                     if (onAnimationFinish != null) {
                         onAnimationFinish.run();
                     }
