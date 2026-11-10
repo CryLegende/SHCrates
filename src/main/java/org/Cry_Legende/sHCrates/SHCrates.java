@@ -12,12 +12,17 @@ import org.Cry_Legende.sHCrates.listeners.InventoryClickListener;
 import org.Cry_Legende.sHCrates.listeners.PlayerInteractListener;
 import org.Cry_Legende.sHCrates.listeners.PlayerQuitListener;
 import org.Cry_Legende.sHCrates.listeners.WorldLoadListener;
+import org.Cry_Legende.sHCrates.network.KeyDatabase;
+import org.Cry_Legende.sHCrates.network.NetworkKeys;
+import org.Cry_Legende.sHCrates.network.NetworkLink;
+import org.Cry_Legende.sHCrates.network.ShNetworkLink;
 import org.Cry_Legende.sHCrates.placeholders.SHCratesExpansion;
 import org.Cry_Legende.sHCrates.storage.PlayerDataManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -32,6 +37,8 @@ public final class SHCrates extends JavaPlugin {
     private GUIManager guiManager;
     private AnimationManager animationManager;
     private PlayerDataManager playerDataManager;
+    // Non nul seulement avec SHNetwork : clés virtuelles dans la base partagée
+    private NetworkKeys network;
 
     private boolean placeholderApiHooked = false;
 
@@ -57,6 +64,7 @@ public final class SHCrates extends JavaPlugin {
 
         // Charger les données des crates (y compris les emplacements physiques et les types de crates)
         this.crateManager.loadCrates(); // Cela va charger les .yml de crates/ et les emplacements
+        enableNetwork();
         this.playerDataManager.loadAllPlayerData(); // Charger les données des joueurs (clés virtuelles)
 
         // 3. Enregistrement des commandes
@@ -107,8 +115,46 @@ public final class SHCrates extends JavaPlugin {
         if (crateManager != null) {
             crateManager.saveCrateLocations(); // Sauvegarder les emplacements physiques des crates
         }
+        // Mode réseau : terminer les écritures en base demandées par ce qui précède
+        if (network != null) {
+            playerDataManager.setNetwork(null);
+            network.stop();
+        }
 
         getLogger().info("SHCrates v" + getDescription().getVersion() + " has been disabled.");
+    }
+
+    /**
+     * Passe en mode réseau si SHNetwork est installé et 'reseau.actif' est vrai. Les classes qui touchent à SHNetwork
+     * ne sont chargées qu'ici : sans lui, le plugin se comporte exactement comme avant.
+     */
+    private void enableNetwork() {
+        if (!configManager.getBoolean("reseau.actif", true)) return;
+        if (!Bukkit.getPluginManager().isPluginEnabled("SHNetwork")) return;
+        KeyDatabase db = null;
+        try {
+            NetworkLink link = ShNetworkLink.open();
+            db = new KeyDatabase(
+                configManager.getString("reseau.base-de-donnees.url", ""),
+                configManager.getString("reseau.base-de-donnees.utilisateur", ""),
+                configManager.getString("reseau.base-de-donnees.mot-de-passe", ""),
+                Math.max(250, configManager.getInt("reseau.base-de-donnees.delai-ms", 3000)));
+            db.createTable();
+            Duration wait = Duration.ofSeconds(Math.max(1, configManager.getInt("reseau.attente-max-secondes", 10)));
+            NetworkKeys net = new NetworkKeys(this, db, link, wait);
+            net.start();
+            playerDataManager.setNetwork(net);
+            network = net;
+            getLogger().info("SHNetwork détecté : les clés virtuelles sont dans la base partagée.");
+        } catch (Exception | LinkageError e) {
+            if (db != null) db.close();
+            getLogger().log(Level.SEVERE, "SHNetwork présent mais inutilisable, clés virtuelles locales à ce serveur : " + e);
+        }
+    }
+
+    /** Mode réseau actif, ou null sur un serveur seul. */
+    public NetworkKeys getNetwork() {
+        return network;
     }
 
     private void registerCommands() {

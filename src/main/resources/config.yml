@@ -9,6 +9,11 @@
 # Pour la configuration des caisses individuelles, voir le dossier 'crates/'.
 # Pour les messages, voir 'messages.yml'.
 #
+# Avec SHNetwork (plusieurs serveurs de jeu), les clés virtuelles sont dans une base partagée (section 'reseau'
+# en bas du fichier). Les blocs de caisse (locations.yml) restent propres à chaque serveur : ceux de Opale vivent
+# dans les mondes 'spawn' et 'Easter', qui n'existent que sur le serveur du spawn, donc les caisses physiques
+# ne se trouvent que là. Les clés physiques sont des objets et suivent le joueur.
+#
 # Commandes (/shcrates, alias /crate et /shcr) :
 #   /shcrates help                                                   Affiche l'aide.
 #   /shcrates list                                                   Liste les caisses.
@@ -22,6 +27,7 @@
 #   /shcrates setblock <caisse>                                      Définit le bloc visé comme caisse.
 #   /shcrates removeblock [confirm]                                  Retire la caisse du bloc visé.
 #   /shcrates reload                                                 Recharge la configuration.
+#   /shcrates import                                                 Avec SHNetwork : copie les clés virtuelles de playerdata/ dans la base.
 #
 # Permissions :
 #   shcrates.command.base           Utiliser /shcrates (par défaut : tous les joueurs).
@@ -92,7 +98,7 @@ storage:
   # des blocs de caisse physiques.
   crate_locations_file: "locations.yml"
 
-  # Type de stockage pour les clés virtuelles des joueurs.
+  # Type de stockage pour les clés virtuelles des joueurs (un serveur seul ; avec SHNetwork, voir 'reseau').
   # Actuellement, seul "YAML" est implémenté et pleinement supporté.
   # Options futures potentielles (non implémentées) : SQLITE, MYSQL
   virtual_keys_storage_type: "YAML" # Ne pas changer sauf si d'autres types sont ajoutés.
@@ -150,3 +156,23 @@ reroll:
     lore:
       - "&7Vous avez déjà utilisé votre"
       - "&7relance pour cette ouverture."
+
+# --- Mode réseau ---
+# Actif seulement si SHNetwork est installé et 'actif' vaut true : les clés virtuelles sont alors dans la base
+# partagée (table shcrates_keys : uuid, crate, amount) au lieu de playerdata/. Elles sont lues à la connexion du
+# joueur, une fois que l'autre serveur a fini de le sauvegarder, puis chaque changement est écrit en base sous forme
+# d'écart (+n ou -n). Les commandes givekey, takekey et open visant un joueur d'un autre serveur lui sont transmises.
+# Les clés déjà dans playerdata/ se copient une fois avec /shcrates import (rien n'est écrasé).
+# Sans SHNetwork, rien de ceci n'est utilisé. Demande un redémarrage.
+reseau:
+  actif: true
+  # Durée maximale, en secondes, pendant laquelle on attend que l'autre serveur ait fini de sauvegarder
+  # le joueur avant de lire ses clés
+  attente-max-secondes: 10
+  base-de-donnees:
+    url: "jdbc:mariadb://127.0.0.1:3306/bo_net"
+    utilisateur: shcrates
+    mot-de-passe: CHANGE_ME
+    # Délai maximal de connexion et de réponse de la base, en millisecondes. Une base qui ne répond pas
+    # empêche d'ouvrir une caisse avec une clé virtuelle tant qu'elle ne répond pas, sans rien faire perdre.
+    delai-ms: 3000

@@ -7,6 +7,13 @@ softdepend:
   - PlaceholderAPI
   - Vault
   - SHLogs
+  # SHNetwork est facultatif : sans lui, les clés virtuelles restent dans les fichiers de ce serveur comme avant.
+  - SHNetwork
+# Chargées par Paper dans le classloader du plugin : le serveur n'embarque que les pilotes MySQL et SQLite.
+# Seul le mode réseau (clés virtuelles en MariaDB) s'en sert.
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - org.mariadb.jdbc:mariadb-java-client:3.4.1
 
 commands:
   shcrates:
@@ -28,6 +35,7 @@ commands:
       §e/shcrates reload §7- Recharge la configuration du plugin.
       §e/shcrates setblock <crateName> §7- Définit un bloc comme crate.
       §e/shcrates removeblock §7- Supprime une crate d'un bloc.
+      §e/shcrates import §7- Copie les clés virtuelles des fichiers vers la base du réseau.
 
 permissions:
   shcrates.*:

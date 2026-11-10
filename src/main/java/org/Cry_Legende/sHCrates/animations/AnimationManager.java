@@ -97,6 +97,10 @@ public class AnimationManager {
         } else if (playerDataManager.getVirtualKeys(player.getUniqueId(), crate.getInternalID()) > 0) {
             playerDataManager.consumeVirtualKey(player.getUniqueId(), crate.getInternalID());
             usedVirtualKey = true;
+        } else if (!playerDataManager.isReady(player.getUniqueId())) {
+            // Mode réseau : les clés virtuelles du joueur ne sont pas encore lues en base
+            messageManager.sendMessage(player, "network_loading");
+            return false;
         } else {
             messageManager.sendMessage(player, "no_key_any", MessageManager.ph("%key_name%", crate.getKeyConfig().getName()));
             if (configManager.isKnockbackOnNoKey() && crateLocation != null) {

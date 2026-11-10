@@ -149,3 +149,15 @@ animation_wheel_cursor: "&eSpinning..." # Nom de l'item central de la roue
 # %shcrates_physical_<cratename>% -> valeur numérique
 # %shcrates_virtual_total% -> valeur numérique
 # %shcrates_physical_total% -> valeur numérique
+
+# --- Mode réseau (SHNetwork) ---
+network_loading: "&7&l« &e&lSH &8&l» &7Vos &eclés virtuelles &7sont en cours de chargement, réessayez dans un instant."
+network_loading_other: "&7&l« &e&lSH &8&l» &7Les &eclés virtuelles &7de &e%player% &7sont en cours de chargement, réessayez dans un instant."
+network_forwarded: "&7&l« &e&lSH &8&l» &e%player% &7est sur le serveur &e%server%&7 : la commande lui a été &etransmise&7."
+network_remote_player: "&7&l« &e&lSH &8&l» &e%player% &7est sur le serveur &e%server%&7 : lancez cette commande depuis ce serveur."
+
+# /shcrates import
+import_started: "&7&l« &e&lSH &8&l» &7Importation des clés virtuelles des fichiers &eplayerdata &7vers la base du réseau..."
+import_done: "&7&l« &a&lSH &8&l» &7Importation terminée : &a%imported% &7ligne(s) ajoutée(s), &a%present% &7déjà présente(s)."
+import_failed: "&7&l« &c&lSH &8&l» &7L'importation a échoué, &cvérifiez la console&7."
+import_no_network: "&7&l« &c&lSH &8&l» &7Cette commande demande le &cmode réseau &7(SHNetwork installé et base joignable)."

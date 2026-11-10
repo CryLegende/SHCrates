@@ -20,7 +20,22 @@ Utilisé sur : **Opale**.
 
 ## Dépendances
 
-- Optionnelles : `PlaceholderAPI`, `Vault`, `SHLogs`
+- Optionnelles : `PlaceholderAPI`, `Vault`, `SHLogs`, `SHNetwork` (mode réseau)
+
+## Mode réseau
+
+Avec **SHNetwork** installé (et `reseau.actif: true`, valeur par défaut), plusieurs serveurs de jeu partagent les clés virtuelles :
+
+- elles sont en MariaDB (table `shcrates_keys` : `uuid`, `crate`, `amount`) au lieu de `playerdata/<uuid>.yml` ;
+- à la connexion, une fois que l'autre serveur a fini de sauvegarder le joueur, ses clés sont lues en base et gardées en mémoire ;
+- chaque clé ajoutée, ouverte ou retirée change la mémoire tout de suite et la base reçoit l'écart (`+n` ou `-n`), jamais le total ;
+- `givekey`, `takekey`, `open` et `openall` visant un joueur d'un autre serveur sont exécutés là où il se trouve ; `giveall` donne aussi les clés aux joueurs des autres serveurs ;
+- `keys` et `preview` visant un joueur d'un autre serveur répondent qu'il faut les lancer depuis son serveur ;
+- les clés déjà dans `playerdata/` se copient une fois avec `/shcrates import`, sans rien écraser (permission `shcrates.admin.import`).
+
+Les blocs de caisse (`locations.yml`) restent propres à chaque serveur. Sur Opale ils sont dans les mondes `spawn` et `Easter`, qui n'existent que sur le serveur du spawn : les caisses physiques ne se trouvent que là. Les clés physiques sont des objets (données de l'objet) et suivent le joueur avec son inventaire.
+
+Sans SHNetwork, ou sans les clés `reseau` dans la configuration, le plugin se comporte comme avant : fichiers `playerdata/`. Si la base est injoignable au démarrage, il reste en mode local. La table se crée toute seule, ou à la main avec `sql/schema.sql`.
 
 ## Logs
 

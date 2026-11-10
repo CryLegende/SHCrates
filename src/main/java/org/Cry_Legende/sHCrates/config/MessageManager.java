@@ -9,6 +9,9 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +47,23 @@ public class MessageManager {
             plugin.getLogger().info("Loading messages.yml...");
         }
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        addMissingFromJar();
         prefix = messagesConfig.getString("prefix", "&f&l« &d&lSH &f&l» &f");
+    }
+
+    /** Une clé absente du messages.yml du serveur (ajoutée par une mise à jour) prend sa valeur dans celui du jar. */
+    private void addMissingFromJar() {
+        try (InputStream in = plugin.getResource("messages.yml")) {
+            if (in == null) return;
+            YamlConfiguration bundled = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
+            for (String key : bundled.getKeys(true)) {
+                if (!bundled.isConfigurationSection(key) && !messagesConfig.contains(key)) {
+                    messagesConfig.set(key, bundled.get(key));
+                }
+            }
+        } catch (IOException e) {
+            plugin.getLogger().log(Level.WARNING, "messages.yml du jar illisible : " + e.getMessage());
+        }
     }
 
     public void reloadMessages() {

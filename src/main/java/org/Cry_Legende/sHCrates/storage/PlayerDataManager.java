@@ -1,6 +1,7 @@
 package org.Cry_Legende.sHCrates.storage;
 
 import org.Cry_Legende.sHCrates.SHCrates;
+import org.Cry_Legende.sHCrates.network.NetworkKeys;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -25,6 +26,8 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
     private final SHCrates plugin;
     private final File playerDataFolder;
     private final Map<UUID, PlayerData> playerDataCache = new ConcurrentHashMap<>();
+    // Mode réseau : les clés virtuelles sont en base au lieu des fichiers. Nul sur un serveur seul.
+    private volatile NetworkKeys network;
 
     public PlayerDataManager(SHCrates plugin) {
         this.plugin = plugin;
@@ -38,6 +41,11 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
         }
         // Enregistrer ce manager comme listener
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    /** Passe en mode réseau (clés virtuelles en base) ou revient aux fichiers avec null. */
+    public void setNetwork(NetworkKeys network) {
+        this.network = network;
     }
 
     // --- Event Handlers for loading/saving data ---
@@ -60,6 +68,11 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
         return playerDataCache.computeIfAbsent(playerUUID, this::loadPlayerDataFromFile);
     }
 
+    /** Faux tant que les clés virtuelles du joueur ne sont pas lues en base (mode réseau seulement). */
+    public boolean isReady(UUID playerUUID) {
+        return getPlayerData(playerUUID).isReady();
+    }
+
     public PlayerData getPlayerData(Player player) {
         return getPlayerData(player.getUniqueId());
     }
@@ -71,7 +84,8 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
         }
         // Load asynchronously to prevent lag on join, but cache result synchronously
         // For simplicity here, we'll do it synchronously. Consider async for larger scale.
-        PlayerData data = loadPlayerDataFromFile(playerUUID);
+        NetworkKeys net = network;
+        PlayerData data = net != null ? net.adopt(playerUUID) : loadPlayerDataFromFile(playerUUID);
         playerDataCache.put(playerUUID, data);
         if (plugin.getConfigManager().isDebugMode()) {
             plugin.getLogger().info("[DEBUG] Loaded data for player " + playerUUID);
@@ -79,6 +93,11 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
     }
 
     private PlayerData loadPlayerDataFromFile(UUID playerUUID) {
+        // Mode réseau : jamais de fichier, les clés viennent de la base (sans clés tant qu'elles ne sont pas lues)
+        NetworkKeys net = network;
+        if (net != null) {
+            return net.startLoading(playerUUID);
+        }
         File playerFile = new File(playerDataFolder, playerUUID.toString() + ".yml");
         PlayerData data = new PlayerData(playerUUID);
 
@@ -97,6 +116,9 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
     }
 
     public void savePlayerData(UUID playerUUID) {
+        if (network != null) {
+            return; // mode réseau : la base est écrite à chaque changement
+        }
         PlayerData data = playerDataCache.get(playerUUID);
         if (data == null) {
             // Pas de données à sauvegarder (peut-être que le joueur n'a jamais interagi ou que les données ont déjà été déchargées)
@@ -149,6 +171,9 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
     }
 
     public void saveAndReloadAllPlayerData() {
+        if (network != null) {
+            return; // mode réseau : la mémoire est déjà à jour avec la base
+        }
         saveAllPlayerData();
         // Recharger les données pour les joueurs actuellement en ligne
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -164,6 +189,11 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
     }
 
     public void addVirtualKeys(UUID playerUUID, String crateInternalId, int amount) {
+        NetworkKeys net = network;
+        if (net != null) {
+            net.add(getPlayerData(playerUUID), crateInternalId, amount);
+            return;
+        }
         getPlayerData(playerUUID).addVirtualKeys(crateInternalId, amount);
         // Sauvegarde immédiate (petit fichier) : un crash ne fait plus perdre les clés achetées,
         // ni « rendre » des clés déjà ouvertes.
@@ -171,8 +201,16 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
     }
 
     public boolean consumeVirtualKey(UUID playerUUID, String crateInternalId) {
-        boolean consumed = getPlayerData(playerUUID).consumeVirtualKey(crateInternalId);
-        if (consumed) savePlayerData(playerUUID);
+        PlayerData data = getPlayerData(playerUUID);
+        NetworkKeys net = network;
+        if (net != null && !data.isReady()) {
+            return false; // clés pas encore lues en base : rien ne se consomme
+        }
+        boolean consumed = data.consumeVirtualKey(crateInternalId);
+        if (consumed) {
+            if (net != null) net.removed(playerUUID, crateInternalId, 1);
+            else savePlayerData(playerUUID);
+        }
         return consumed;
     }
 
@@ -186,18 +224,25 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
      */
     public PlayerData peekPlayerData(UUID playerUUID) {
         PlayerData cached = playerDataCache.get(playerUUID);
-        return cached != null ? cached : loadPlayerDataFromFile(playerUUID);
+        if (cached != null) return cached;
+        // Mode réseau : pas de lecture en base depuis le fil principal, un joueur d'un autre serveur n'a rien ici
+        return network != null ? new PlayerData(playerUUID) : loadPlayerDataFromFile(playerUUID);
     }
 
     public int takeVirtualKeys(UUID playerUUID, String crateInternalId, int amountToTake) {
         if (amountToTake <= 0) return 0;
         PlayerData data = getPlayerData(playerUUID);
+        NetworkKeys net = network;
+        if (net != null && !data.isReady()) {
+            return 0; // clés pas encore lues en base : rien ne se retire
+        }
         int currentKeys = data.getVirtualKeys(crateInternalId);
         int actualAmountTaken = Math.min(amountToTake, currentKeys);
 
         if (actualAmountTaken > 0) {
             data.setVirtualKeys(crateInternalId, currentKeys - actualAmountTaken);
-            savePlayerData(playerUUID);
+            if (net != null) net.removed(playerUUID, crateInternalId, actualAmountTaken);
+            else savePlayerData(playerUUID);
         }
         return actualAmountTaken;
     }

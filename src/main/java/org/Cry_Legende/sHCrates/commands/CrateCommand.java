@@ -5,6 +5,8 @@ import org.Cry_Legende.sHCrates.config.MessageManager;
 import org.Cry_Legende.sHCrates.crates.Crate;
 import org.Cry_Legende.sHCrates.crates.CrateManager;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
+import org.Cry_Legende.sHCrates.network.NetworkKeys;
+import org.Cry_Legende.sHCrates.network.NetworkLink;
 import org.Cry_Legende.sHCrates.storage.PlayerDataManager;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.bukkit.Bukkit;
@@ -39,7 +41,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
     private final GUIManager guiManager;
     private final MessageManager messageManager;
 
-    private final List<String> adminSubCommands = List.of("givekey", "takekey", "giveall", "reload", "setblock", "removeblock");
+    private final List<String> adminSubCommands = List.of("givekey", "takekey", "giveall", "reload", "setblock", "removeblock", "import");
     private final List<String> playerSubCommands = List.of("help", "list", "preview", "open", "openall", "keys");
 
 
@@ -96,6 +98,9 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 break;
             case "reload":
                 handleReloadCommand(sender);
+                break;
+            case "import":
+                handleImportCommand(sender);
                 break;
             default:
                 messageManager.sendMessage(sender, "unknown_command", MessageManager.ph("%command%", subCommand));
@@ -186,6 +191,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             }
             targetPlayer = Bukkit.getPlayer(args[2]);
             if (targetPlayer == null) {
+                if (refuseRemote(sender, args[2])) return;
                 messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[2]));
                 return;
             }
@@ -224,6 +230,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             }
             targetPlayer = Bukkit.getPlayer(args[2]);
             if (targetPlayer == null) {
+                if (forwardToOtherServer(sender, args, 2)) return;
                 messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[2]));
                 return;
             }
@@ -255,6 +262,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             targetPlayer = Bukkit.getPlayerExact(args[1]);
             if (targetPlayer == null) {
                 // Cache local uniquement : getOfflinePlayer(String) peut interroger Mojang sur le thread principal
+                if (refuseRemote(sender, args[1])) return;
                 OfflinePlayer offlineTarget = Bukkit.getOfflinePlayerIfCached(args[1]);
                 if (offlineTarget == null || !offlineTarget.hasPlayedBefore()) {
                     messageManager.sendMessage(sender, "player_never_played", MessageManager.ph("%player%", args[1]));
@@ -330,6 +338,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
         }
         Player targetPlayer = Bukkit.getPlayer(args[1]);
         if (targetPlayer == null) {
+            if (forwardKeyCommand(sender, args)) return;
             messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[1]));
             return;
         }
@@ -378,6 +387,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
 
         Player targetPlayer = Bukkit.getPlayer(args[1]);
         if (targetPlayer == null) {
+            if (forwardKeyCommand(sender, args)) return;
             messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[1]));
             return;
         }
@@ -413,6 +423,11 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
         if (physical) {
             actualAmountTaken = crateManager.takePhysicalKeys(targetPlayer, crate, amountToRemove);
         } else {
+            if (!playerDataManager.isReady(targetPlayer.getUniqueId())) {
+                // Mode réseau : les clés virtuelles du joueur ne sont pas encore lues en base
+                messageManager.sendMessage(sender, "network_loading_other", MessageManager.ph("%player%", targetPlayer.getName()));
+                return;
+            }
             actualAmountTaken = playerDataManager.takeVirtualKeys(targetPlayer.getUniqueId(), crate.getInternalID(), amountToRemove);
         }
 
@@ -475,12 +490,109 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             crateManager.giveKey(onlinePlayer, crate.getId(), amount, physical);
             playerCount++;
         }
+        // Mode réseau : les joueurs des autres serveurs reçoivent leurs clés eux aussi
+        NetworkKeys network = plugin.getNetwork();
+        if (network != null) {
+            network.broadcastGiveAll(crate.getId(), amount, physical);
+        }
         messageManager.sendMessage(sender, "keys_given_to_all", MessageManager.ph(
             "%amount%", String.valueOf(amount),
             "%key_type%", physical ? "physique(s)" : "virtuelle(s)",
             "%crate_name%", crate.getDisplayName(),
             "%player_count%", String.valueOf(playerCount)
         ));
+    }
+
+    // ------------------------------------------------------------------ mode réseau
+
+    /** Joueur absent de ce serveur mais connecté sur un autre (mode réseau), sinon vide. */
+    private Optional<NetworkLink.Remote> remotePlayer(String name) {
+        NetworkKeys network = plugin.getNetwork();
+        if (network == null) {
+            return Optional.empty();
+        }
+        NetworkLink link = network.link();
+        return link.find(name).filter(remote -> !remote.server().equalsIgnoreCase(link.serverName()));
+    }
+
+    /**
+     * Mode réseau : la commande vise un joueur connecté sur un autre serveur. Elle y est exécutée, là où se trouve
+     * le joueur (ses clés y sont en mémoire), et l'expéditeur en est prévenu.
+     *
+     * @param playerArg position du pseudo dans la commande
+     * @return vrai si la commande a été transmise
+     */
+    private boolean forwardToOtherServer(CommandSender sender, String[] args, int playerArg) {
+        Optional<NetworkLink.Remote> remote = remotePlayer(args[playerArg]);
+        if (remote.isEmpty()) {
+            return false;
+        }
+        String[] forwarded = args.clone();
+        forwarded[playerArg] = remote.get().name();
+        plugin.getNetwork().link().runFor(remote.get().name(), "shcrates " + String.join(" ", forwarded));
+        messageManager.sendMessage(sender, "network_forwarded", MessageManager.ph(
+            "%player%", remote.get().name(),
+            "%server%", remote.get().server()
+        ));
+        return true;
+    }
+
+    /** givekey et takekey vers un joueur d'un autre serveur : mêmes vérifications qu'ici, puis transmission. */
+    private boolean forwardKeyCommand(CommandSender sender, String[] args) {
+        if (remotePlayer(args[1]).isEmpty()) {
+            return false;
+        }
+        if (crateManager.getCrate(args[2]).isEmpty()) {
+            messageManager.sendMessage(sender, "crate_not_exist", MessageManager.ph("%crate_name%", args[2]));
+            return true;
+        }
+        try {
+            if (Integer.parseInt(args[3]) <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            messageManager.sendMessage(sender, "invalid_amount", MessageManager.ph("%amount%", args[3]));
+            return true;
+        }
+        if (args.length >= 5 && !List.of("virtual", "v", "physical", "p").contains(args[4].toLowerCase())) {
+            messageManager.sendMessage(sender, "invalid_key_type", MessageManager.ph("%type%", args[4]));
+            return true;
+        }
+        return forwardToOtherServer(sender, args, 1);
+    }
+
+    /** Commande qui ne peut pas viser un joueur d'un autre serveur : on le dit au lieu de le croire hors ligne. */
+    private boolean refuseRemote(CommandSender sender, String name) {
+        Optional<NetworkLink.Remote> remote = remotePlayer(name);
+        if (remote.isEmpty()) {
+            return false;
+        }
+        messageManager.sendMessage(sender, "network_remote_player", MessageManager.ph(
+            "%player%", remote.get().name(),
+            "%server%", remote.get().server()
+        ));
+        return true;
+    }
+
+    private void handleImportCommand(CommandSender sender) {
+        if (!sender.hasPermission("shcrates.admin.import") && !sender.hasPermission("shcrates.admin")) {
+            messageManager.sendMessage(sender, "no_permission");
+            return;
+        }
+        NetworkKeys network = plugin.getNetwork();
+        if (network == null) {
+            messageManager.sendMessage(sender, "import_no_network");
+            return;
+        }
+        messageManager.sendMessage(sender, "import_started");
+        network.importFiles(new java.io.File(plugin.getDataFolder(), "playerdata"), result -> {
+            if (result == null) {
+                messageManager.sendMessage(sender, "import_failed");
+            } else {
+                messageManager.sendMessage(sender, "import_done", MessageManager.ph(
+                    "%imported%", String.valueOf(result[0]),
+                    "%present%", String.valueOf(result[1])
+                ));
+            }
+        });
     }
 
     private void handleSetBlockCommand(CommandSender sender, String[] args) {
