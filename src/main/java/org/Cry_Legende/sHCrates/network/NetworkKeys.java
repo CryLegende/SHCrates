@@ -20,11 +20,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
@@ -32,8 +30,8 @@ import java.util.logging.Level;
  * Mode réseau : les clés virtuelles vivent dans la base partagée au lieu de {@code playerdata/<uuid>.yml}.
  *
  * <ul>
- *   <li>à la connexion (avant que le joueur n'entre) : une fois le départ de l'autre serveur confirmé,
- *       ses clés sont lues en base et gardées en mémoire, comme avant ;</li>
+ *   <li>à la connexion : une fois le départ de l'autre serveur confirmé, ses clés sont lues en base et gardées en
+ *       mémoire, comme avant ; en attendant, elles ne sont pas prêtes et aucune ne peut être ouverte ;</li>
  *   <li>à chaque changement (clé ajoutée, ouverte, retirée) : la mémoire change tout de suite et la base reçoit
  *       l'écart (+n ou -n), jamais le total, sur un fil à part ;</li>
  *   <li>au départ : la barrière de SHNetwork attend que ces écritures soient finies ;</li>
@@ -99,35 +97,30 @@ public final class NetworkKeys implements Listener {
 
     // ------------------------------------------------------------------ chargement
 
-    /** Fil asynchrone de Paper : on peut attendre le départ de l'autre serveur et la base ici. */
+    /**
+     * Lance la lecture des clés dès la pré-connexion, sans l'attendre : le serveur quitté ne sauvegarde le joueur
+     * qu'une fois cette connexion terminée (le proxy ferme l'ancienne connexion après), attendre ici bloquerait la
+     * connexion jusqu'au délai maximal. Les clés restent « pas prêtes » jusqu'à la lecture, faite sur le fil de la base
+     * une fois le départ confirmé.
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPreLogin(AsyncPlayerPreLoginEvent event) {
         if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
             return;
         }
         UUID uuid = event.getUniqueId();
+        String name = event.getName();
         long now = System.currentTimeMillis();
         preloaded.values().removeIf(p -> now - p.at() > PRELOAD_KEEP_MS);
-        try {
-            Boolean saved = link.awaitSaved(uuid, waitMax).get(waitMax.toMillis() + 2000L, TimeUnit.MILLISECONDS);
-            if (!Boolean.TRUE.equals(saved)) {
-                plugin.getLogger().warning("Départ de " + event.getName() + " non confirmé par l'autre serveur : clés relues quand même.");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException | TimeoutException e) {
-            plugin.getLogger().warning("Départ de " + event.getName() + " non confirmé (" + e + ") : clés relues quand même.");
-        }
         PlayerData data = notReady(uuid);
-        try {
-            data.loadFromMap(db.load(uuid));
-            data.setReady(true);
-        } catch (SQLException e) {
-            // le joueur entre quand même : ses clés sont relues dès que la base répond, en attendant il n'en a aucune
-            plugin.getLogger().warning("Clés de " + event.getName() + " non lues en base : " + e.getMessage());
-            retryLoad(data, 1);
-        }
         preloaded.put(uuid, new Preloaded(data, now));
+        link.awaitSaved(uuid, waitMax).whenComplete((saved, error) -> {
+            if (error != null || !Boolean.TRUE.equals(saved)) {
+                plugin.getLogger().warning("Départ de " + name + " non confirmé par l'autre serveur"
+                    + (error != null ? " (" + error + ")" : "") + " : clés relues quand même.");
+            }
+            submit(() -> loadOnce(data, 0));
+        });
     }
 
     /** Données du joueur qui entre : celles lues à sa pré-connexion, sinon (rechargement à chaud) lues maintenant. */
