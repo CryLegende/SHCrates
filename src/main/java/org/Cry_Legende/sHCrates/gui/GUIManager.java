@@ -8,7 +8,11 @@ import org.Cry_Legende.sHCrates.config.MessageManager;
 import org.Cry_Legende.sHCrates.crates.Crate;
 import org.Cry_Legende.sHCrates.crates.Reward;
 import org.Cry_Legende.sHCrates.crates.config.PreviewGUIConfig;
+import org.Cry_Legende.sHCrates.crates.Conditions;
+import org.Cry_Legende.sHCrates.crates.Tier;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
+import org.Cry_Legende.sHCrates.utils.Papi;
+import java.time.format.DateTimeFormatter;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -54,6 +58,9 @@ public class GUIManager {
 
         List<ItemStack> rewardItems = crate.getRewards().stream()
             .filter(Reward::isDisplayInPreview) // Filtrer par DisplayInPreview
+            // Lot en rotation hors de son mois, ou réservé à d'autres joueurs (Condition) : pas montré
+            .filter(crate::isInCurrentRotation)
+            .filter(reward -> reward.getCondition() == null || Conditions.test(player, reward.getCondition()))
             .map(reward -> prepareRewardDisplayItem(reward, player, crate)) // Préparer l'item avec lore dynamique
             .collect(Collectors.toList());
 
@@ -83,6 +90,16 @@ public class GUIManager {
         if (meta == null) return displayItem;
 
         List<String> lore = new ArrayList<>(meta.getLore() != null ? meta.getLore() : Collections.emptyList());
+        Tier tier = plugin.getConfigManager().getTier(reward.getTierId());
+        if (tier != null) {
+            String tierLine = messageManager.getRawPrefixedMessage("preview_tier_line", MessageManager.ph("%tier%", tier.name()));
+            if (!tierLine.isEmpty()) lore.add(tierLine);
+        }
+        if (crate.getRotation().contains(reward.getId())) {
+            String rotationLine = messageManager.getRawPrefixedMessage("preview_rotation_line", MessageManager.ph(
+                "%end%", crate.getRotationEnd().format(DateTimeFormatter.ofPattern("dd/MM"))));
+            if (!rotationLine.isEmpty()) lore.add(rotationLine);
+        }
 
         boolean canWin = true;
         if (!reward.getBlacklistedPermissions().isEmpty()) {
@@ -123,11 +140,20 @@ public class GUIManager {
                 PreviewGUIConfig.FillerEntryConfig fillerEntry = entry.getValue();
                 if (fillerEntry.getMaterial() == null || fillerEntry.getMaterial() == Material.AIR) continue;
 
+                // Les placeholders PlaceholderAPI sont remplacés pour le joueur (jauge, première clé...)
+                Player viewer = pagedGUI.getViewer();
                 ItemBuilder fillerBuilder = new ItemBuilder(fillerEntry.getMaterial())
-                    .setName(ChatUtils.colorize(fillerEntry.getName()))
+                    .setName(ChatUtils.colorize(Papi.apply(viewer, fillerEntry.getName())))
                     .setCustomModelData(fillerEntry.getCustomModelData());
                 if (fillerEntry.getLore() != null && !fillerEntry.getLore().isEmpty()) {
-                    fillerBuilder.setLore(ChatUtils.colorize(fillerEntry.getLore()));
+                    List<String> fillerLore = new ArrayList<>();
+                    for (String line : fillerEntry.getLore()) {
+                        String resolved = Papi.apply(viewer, line);
+                        // une ligne dont le placeholder rend un texte vide disparaît
+                        if (!line.isEmpty() && resolved.isEmpty()) continue;
+                        fillerLore.add(resolved);
+                    }
+                    fillerBuilder.setLore(ChatUtils.colorize(fillerLore));
                 }
                 ItemStack specificFillerStack = fillerBuilder.build();
 

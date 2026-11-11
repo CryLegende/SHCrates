@@ -3,7 +3,8 @@
 # ======================================================================== #
 #
 # Plugin : caisses à récompenses avec clés physiques ou virtuelles, aperçu
-# des lots et ouverture multiple.
+# des lots, ouverture multiple, paliers de rareté, jauge de garantie, première
+# clé garantie et lots en rotation mensuelle.
 #
 # Ce fichier contient les paramètres globaux du plugin SHCrates.
 # Pour la configuration des caisses individuelles, voir le dossier 'crates/'.
@@ -18,8 +19,10 @@
 # sous réserve des permissions ; sans argument, une ligne d'usage ne liste que celles que l'expéditeur peut utiliser.
 #   /crate preview <caisse> [joueur]                              Ouvre l'aperçu d'une caisse.
 #   /crate open <caisse> [joueur]                                 Ouvre une caisse.
-#   /crate openall <caisse> [joueur]                              Ouvre toutes les clés d'une caisse.
+#   /crate openall <caisse> [joueur]                              Ouvre toutes les clés d'une caisse (aussi Shift+clic
+#                                                                 droit sur le bloc d'une QuickCrate), avec un récapitulatif.
 #   /crate keys [joueur]                                          Affiche les clés d'un joueur.
+#   /crate stats [joueur]                                         Clés ouvertes, meilleur palier, jauge et collection par caisse.
 #   /crate list                                                   Liste les caisses.
 #   /shcrates givekey <joueur> <caisse> <nombre> [physical|virtual]  Donne des clés à un joueur.
 #   /shcrates takekey <joueur> <caisse> <nombre> [physical|virtual]  Retire des clés à un joueur.
@@ -40,6 +43,7 @@
 #   shcrates.reroll.<caisse|*>      Relancer une récompense, par exemple shcrates.reroll.legendaire (par défaut : op).
 #   shcrates.removeblock.<caisse>   Casser le bloc d'une caisse, par exemple shcrates.removeblock.noel (par défaut : op).
 #   shcrates.bypass.creative        Ouvrir une caisse en mode créatif (par défaut : op, ne se déduit pas de shcrates.admin).
+#   shcrates.admin.statsothers      /crate stats d'un autre joueur.
 #   shcrates.admin                  Toutes les commandes d'administration, et l'aperçu et l'ouverture de toutes les caisses
 #                                   (par défaut : op).
 #   shcrates.admin.<commande>       Une commande d'administration : givekey, takekey, giveall, setblock, removeblock,
@@ -49,6 +53,28 @@
 #   shcrates.admin.keysothers       Voir les clés d'un autre joueur.
 #   shcrates.*                      Tous les droits ci-dessus.
 #
+#
+# Clés propres à chaque caisse (fichiers de crates/) :
+#   OuvertureMultiple: false        Refuse /crate openall et le Shift+clic : une clé à la fois (par défaut : true).
+#   AnnonceReception: true          Message (key_received_announce), son (son_cle_recue) et état de la jauge quand le
+#                                   joueur reçoit des clés de cette caisse (par défaut : false).
+#   PremiereOuverture: tres_rare    La toute première clé ouverte par un joueur tire seulement parmi les lots de ce
+#                                   palier ou d'un palier plus haut.
+#   Jauge:                          Après Seuil - 1 clés sans lot d'un des Paliers, la clé suivante tire seulement parmi
+#     Seuil: 30                     ces paliers. La jauge repart à zéro dès qu'un de ces lots sort, garanti ou non.
+#     Paliers: [legendaire]
+#     Nom: "&6Jauge Légendaire"
+#   Rotation:                       Un seul des Lots est gagnable chaque mois, à tour de rôle depuis Debut (AAAA-MM) ;
+#     Debut: "2026-12"              les autres sont absents de l'aperçu et du tirage.
+#     Lots: [lotA, lotB]
+# Clés propres à chaque récompense :
+#   Palier: rare                    Palier de rareté (section 'paliers' ci-dessous) : ligne « Rareté » dans l'aperçu,
+#                                   son, feu d'artifice, titre et annonce. Sans palier : son SoundWin de la caisse et
+#                                   FireworkOnWin, comme avant.
+#   Condition: "%superior_island_level% < 5000"
+#                                   Lot gagnable (et visible) seulement si la condition est vraie. Les deux côtés passent
+#                                   par PlaceholderAPI ; opérateurs < <= > >= == !=.
+# Les commandes des récompenses passent aussi par PlaceholderAPI (montants qui suivent le joueur).
 # ======================================================================== #
 
 # --- Paramètres Généraux ---
@@ -89,11 +115,6 @@ log_rewards_to_console: true
 # Variables : %player_name%, %reward_name%.
 reward_log_format: "%player_name% gagne %reward_name%"
 
-# Délai en ticks (1 tick = 1/20ème de seconde) entre chaque récompense donnée
-# lors de l'utilisation de la commande /shcrates openall.
-# Mettre à 0 pour un don instantané (peut spammer le chat si beaucoup de récompenses).
-# Un délai de 1 ou 2 ticks est généralement bon.
-open_all_delay_ticks: 2
 
 # --- Stockage des Données ---
 storage:
@@ -125,6 +146,62 @@ compatibility_mode:
 # Cela laisse le temps au joueur de voir sa récompense et de décider de relancer.
 # Mettre à -1 pour désactiver la fermeture automatique.
 auto_close_gui_delay_seconds: -1
+
+# --- Ouverture multiple (/crate openall, Shift+clic sur une QuickCrate) ---
+ouverture_multiple:
+  # Nombre maximal de clés ouvertes en une fois
+  max: 200
+  # Clés ouvertes par tick : plus haut, l'ouverture est plus rapide mais pèse davantage sur un seul tick
+  par_tick: 20
+
+# Son joué quand un joueur reçoit des clés d'une caisse qui a « AnnonceReception: true »
+son_cle_recue: ENTITY_EXPERIENCE_ORB_PICKUP
+
+# --- Paliers de rareté ---
+# Chaque récompense peut désigner un palier avec « Palier: <id> ». Le rang ordonne les paliers (1 = le plus courant) :
+# meilleur lot d'une ouverture multiple, palier minimal de PremiereOuverture, statistiques.
+#   nom           Nom affiché, avec sa couleur.
+#   vitre         Vitre du cadre de la roulette quand elle ralentit sur un lot de ce palier ("" : cadre inchangé).
+#   son           Son joué au joueur quand le lot apparaît (ancien nom ou clé), volume et hauteur.
+#   feu-artifice  Feu d'artifice au-dessus du bloc de la caisse (ou du joueur pour une ouverture par commande).
+#   totem         Animation du totem d'immortalité sur l'écran du joueur ; elle joue son propre son.
+#   titre         Titre et sous-titre affichés au joueur ("" : aucun), %reward% = nom du lot.
+#   annonce       Annonce du gain à tout le serveur (message announce_win).
+paliers:
+  commun:
+    rang: 1
+    nom: "&7Commun"
+    vitre: ""
+    son: ENTITY_EXPERIENCE_ORB_PICKUP
+    volume: 0.8
+    hauteur: 1.2
+  rare:
+    rang: 2
+    nom: "&bRare"
+    vitre: LIGHT_BLUE_STAINED_GLASS_PANE
+    son: ENTITY_PLAYER_LEVELUP
+    volume: 0.8
+    hauteur: 1.3
+  tres_rare:
+    rang: 3
+    nom: "&5Très rare"
+    vitre: PURPLE_STAINED_GLASS_PANE
+    son: UI_TOAST_CHALLENGE_COMPLETE
+    volume: 0.9
+    hauteur: 1.1
+    feu-artifice: true
+    titre: "&5&lTRÈS RARE"
+    sous-titre: "%reward%"
+  legendaire:
+    rang: 4
+    nom: "&6Légendaire"
+    vitre: ORANGE_STAINED_GLASS_PANE
+    son: ""
+    feu-artifice: true
+    totem: true
+    titre: "&6&lLÉGENDAIRE"
+    sous-titre: "%reward%"
+    annonce: true
 
 # --- Paramètres de Relance (Reroll) ---
 # Permet aux joueurs de relancer une récompense à la fin d'une animation.

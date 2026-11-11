@@ -4,7 +4,7 @@
 
 # SHCrates
 
-*Caisses à récompenses avec clés physiques ou virtuelles, aperçu des lots et ouverture multiple.*
+*Caisses à récompenses avec clés physiques ou virtuelles, aperçu des lots, ouverture multiple, paliers de rareté, jauge de garantie et lots du mois.*
 
 <img src="https://img.shields.io/badge/Paper-26.3-f2a900?style=for-the-badge" alt="Paper 26.3"> <img src="https://img.shields.io/badge/Java-25-e76f00?style=for-the-badge" alt="Java 25"> <img src="https://img.shields.io/badge/SkyHand-Opale-3aa655?style=for-the-badge" alt="SkyHand Opale">
 
@@ -17,6 +17,20 @@
 Caisses à récompenses avec clés physiques ou virtuelles, aperçu des lots et ouverture multiple.
 
 Utilisé sur : **Opale**.
+
+## Paliers, jauge et garanties
+
+- **Paliers de rareté** (`paliers` dans `config.yml`) : chaque récompense peut désigner son palier avec `Palier:`. Le palier donne la ligne « Rareté » de l'aperçu, la couleur du cadre quand la roulette ralentit, le son, le feu d'artifice, l'animation du totem, le titre et l'annonce au serveur. Une récompense sans palier garde le son `SoundWin` de la caisse et `FireworkOnWin`.
+- **Roulette pondérée** : les lots qui défilent sont tirés selon leurs vraies chances.
+- **Jauge de garantie** (`Jauge:` dans une caisse) : après `Seuil - 1` clés sans lot d'un des paliers visés, la clé suivante tire seulement parmi eux. Elle repart à zéro dès qu'un de ces lots sort. L'état s'affiche en barre d'action après chaque ouverture et à la réception de clés.
+- **Première clé** (`PremiereOuverture:`) : la toute première clé d'un joueur tire parmi les lots du palier donné ou mieux.
+- **Lots du mois** (`Rotation:`) : un seul des lots listés est gagnable chaque mois, à tour de rôle.
+- **Conditions** (`Condition:` d'une récompense) : lot gagnable et visible seulement si la comparaison PlaceholderAPI est vraie. Les commandes des récompenses passent aussi par PlaceholderAPI.
+- **Ouverture multiple** : `/crate openall` et Shift+clic droit sur le bloc d'une QuickCrate ouvrent toutes les clés (virtuelles puis physiques), avec un récapitulatif du plus courant au plus rare, un seul son et le dévoilement du meilleur lot. Refusée sur une caisse qui a `OuvertureMultiple: false`. S'arrête quand l'inventaire est plein.
+- **Réception de clés** (`AnnonceReception: true`) : message, son et état de la jauge quand le joueur reçoit des clés de la caisse.
+- Une animation en GUI donne le lot dès la fin du défilement quand le joueur ne peut pas le relancer ; avec une relance possible, il est donné à la fermeture, une fois le choix fait.
+
+Les compteurs (jauge, clés ouvertes, première clé, meilleur palier) sont rangés avec les clés virtuelles du joueur : section `progression` de `playerdata/<uuid>.yml`, ou lignes `#<compteur>` de la table `shcrates_keys` en mode réseau.
 
 ## Dépendances
 
@@ -51,6 +65,7 @@ Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (
 | `/crate open <caisse> [joueur]` | `/shcrates open` | Ouvre une caisse. | `shcrates.use` et `shcrates.open.<caisse>` |
 | `/crate openall <caisse> [joueur]` | `/shcrates openall` | Ouvre toutes les clés d'une caisse. | idem `open` |
 | `/crate keys [joueur]` | `/shcrates keys` | Affiche les clés d'un joueur. | `shcrates.keys` ; autre joueur : `shcrates.admin.keysothers` |
+| `/crate stats [joueur]` | `/shcrates stats` | Clés ouvertes, meilleur palier, jauge et collection par caisse. | `shcrates.use` ; autre joueur : `shcrates.admin.statsothers` |
 | `/crate list` | `/shcrates list` | Liste les caisses. | `shcrates.list` |
 | `/shcrates givekey <joueur> <caisse> <nombre> [physical\|virtual]` | `/shcr` | Donne des clés. | `shcrates.admin.givekey` |
 | `/shcrates takekey <joueur> <caisse> <nombre> [physical\|virtual]` | `/shcr` | Retire des clés. | `shcrates.admin.takekey` |
@@ -78,7 +93,19 @@ Les sous-commandes d'administration marchent depuis la console ; `setblock` et `
 | `shcrates.bypass.creative` | Ouvrir une caisse en mode créatif (ne se déduit pas de `shcrates.admin`). | `op` |
 | `shcrates.admin` | Toute l'administration, aperçu et ouverture de toutes les caisses (parent des nœuds suivants). | `op` |
 | `shcrates.admin.givekey` `.takekey` `.giveall` `.setblock` `.removeblock` `.reload` `.import` `.info` | Une sous-commande chacun. | `op` |
-| `shcrates.admin.previewothers` `.openothers` `.keysothers` | Viser un autre joueur avec `preview`, `open` ou `keys`. | `op` |
+| `shcrates.admin.previewothers` `.openothers` `.keysothers` `.statsothers` | Viser un autre joueur avec `preview`, `open`, `keys` ou `stats`. | `op` |
+
+## Placeholders
+
+| Placeholder | Valeur |
+|---|---|
+| `%shcrates_virtual_<caisse>%` / `%shcrates_physical_<caisse>%` | Clés virtuelles / physiques du joueur. |
+| `%shcrates_virtual_total%` / `%shcrates_physical_total%` | Total de clés virtuelles / physiques. |
+| `%shcrates_jauge_<caisse>%` / `%shcrates_jauge_seuil_<caisse>%` / `%shcrates_jauge_reste_<caisse>%` | Jauge du joueur, seuil, clés restantes avant la garantie. |
+| `%shcrates_jauge_barre_<caisse>%` | Barre de 20 segments. |
+| `%shcrates_ouvertures_<caisse>%` | Clés ouvertes par le joueur. |
+| `%shcrates_premiere_<caisse>%` | Texte de la garantie de première clé tant qu'elle n'est pas utilisée, vide ensuite. |
+| `%shcrates_rotation_<caisse>%` | Nom du lot en rotation ce mois-ci. |
 
 ## Configuration
 

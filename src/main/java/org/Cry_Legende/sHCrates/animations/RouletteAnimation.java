@@ -115,8 +115,9 @@ public class RouletteAnimation implements Animation, InventoryHolder {
     private List<ItemStack> generateRouletteItems(List<Reward> eligibleRewards, Reward finalReward) {
         List<ItemStack> items = new ArrayList<>();
         int listLength = 60;
+        // Les lots défilent selon leurs vraies chances : un lot rare passe rarement
         for (int i = 0; i < listLength; i++) {
-            items.add(eligibleRewards.get(random.nextInt(eligibleRewards.size())).getDisplayItemStack().clone());
+            items.add(Crate.pick(eligibleRewards).getDisplayItemStack().clone());
         }
         items.set(listLength - ROULETTE_LINE_SLOTS.length + MIDDLE_SLOT_INDEX, finalReward.getDisplayItemStack().clone());
         return items;
@@ -150,6 +151,7 @@ public class RouletteAnimation implements Animation, InventoryHolder {
         private long nextTick = 0;
         private final long totalDuration;
         private final double slowdownPoint;
+        private boolean suspenseShown = false;
 
         public MasterAnimationTick(Player p, Crate c, Inventory inv, List<ItemStack> items, Reward reward, int stopIndex, Runnable onFinish, AnimationConfig config, Location crateLoc) {
             this.player = p;
@@ -187,6 +189,11 @@ public class RouletteAnimation implements Animation, InventoryHolder {
                 }
             }
 
+            if (!suspenseShown && ticksElapsed >= slowdownPoint) {
+                suspenseShown = true;
+                showSuspense();
+            }
+
             nextTick = ticksElapsed + (long) Math.max(1.0, currentDelay);
             currentIndex++;
             updateGUISpin();
@@ -194,6 +201,18 @@ public class RouletteAnimation implements Animation, InventoryHolder {
 
             if (currentIndex >= finalStopIndex || ticksElapsed >= totalDuration) {
                 finishAnimation();
+            }
+        }
+
+        /** Quand la roulette ralentit, le cadre prend la couleur du palier du lot qui va sortir. */
+        private void showSuspense() {
+            Material glass = plugin.getAnimationManager().suspenseGlass(chosenReward);
+            if (glass == null) return;
+            ItemStack frame = new ItemBuilder(glass).setName(" ").build();
+            for (int i = 0; i < GUI_SIZE; i++) {
+                if (i == CURSOR_SLOT) continue;
+                if (i >= ROULETTE_LINE_SLOTS[0] && i <= ROULETTE_LINE_SLOTS[ROULETTE_LINE_SLOTS.length - 1]) continue;
+                gui.setItem(i, frame);
             }
         }
 
@@ -212,11 +231,6 @@ public class RouletteAnimation implements Animation, InventoryHolder {
 
             gui.setItem(ROULETTE_LINE_SLOTS[MIDDLE_SLOT_INDEX], chosenReward.getDisplayItemStack().clone());
 
-            playSound(player, player.getLocation(), animConfig.getSoundWin());
-            if (chosenReward.hasFireworkOnWin() && physicalCrateLocation != null) {
-                plugin.getAnimationManager().spawnFirework(physicalCrateLocation.clone().add(0.5, 1.5, 0.5));
-            }
-
             if (plugin.getConfigManager().isRerollEnabled()) {
                 int rerollSlot = animConfig.getRerollButtonSlot();
                 if (rerollSlot >= 0 && rerollSlot < gui.getSize()) {
@@ -234,6 +248,7 @@ public class RouletteAnimation implements Animation, InventoryHolder {
             if (onAnimationFinishCallback != null) {
                 onAnimationFinishCallback.run();
             }
+            plugin.getAnimationManager().onSpinFinished(player);
 
             int autoCloseDelay = plugin.getConfigManager().getAutoCloseGUIDelaySeconds();
             if (autoCloseDelay >= 0) {

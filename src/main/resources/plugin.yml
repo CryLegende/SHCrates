@@ -23,7 +23,7 @@ commands:
     usage: /shcrates <givekey|takekey|giveall|setblock|removeblock|info|reload|import>
   crate:
     description: Aperçu, ouverture et clés des caisses.
-    usage: /crate <preview|open|openall|keys|list>
+    usage: /crate <preview|open|openall|keys|stats|list>
 
 permissions:
   shcrates.*:
@@ -70,6 +70,7 @@ permissions:
       shcrates.admin.previewothers: true
       shcrates.admin.openothers: true
       shcrates.admin.keysothers: true
+      shcrates.admin.statsothers: true
   shcrates.admin.reload:
     description: Recharger la configuration, les messages, les caisses et les emplacements.
     default: op
@@ -102,4 +103,7 @@ permissions:
     default: op
   shcrates.admin.keysothers:
     description: Voir les clés d'un autre joueur.
+    default: op
+  shcrates.admin.statsothers:
+    description: Voir les statistiques de box d'un autre joueur.
     default: op

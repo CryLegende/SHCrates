@@ -2,7 +2,10 @@ package org.Cry_Legende.sHCrates.placeholders;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.Cry_Legende.sHCrates.SHCrates;
+import org.Cry_Legende.sHCrates.config.MessageManager;
 import org.Cry_Legende.sHCrates.crates.Crate;
+import org.Cry_Legende.sHCrates.crates.Reward;
+import org.Cry_Legende.sHCrates.crates.Tier;
 import org.Cry_Legende.sHCrates.crates.CrateManager;
 import org.Cry_Legende.sHCrates.storage.PlayerDataManager;
 import org.bukkit.OfflinePlayer;
@@ -117,6 +120,61 @@ public class SHCratesExpansion extends PlaceholderExpansion {
             }
         }
 
+        String progress = progressPlaceholder(offlinePlayer, params);
+        if (progress != null) {
+            return progress;
+        }
+
         return null; // Placeholder non reconnu
+    }
+
+    /**
+     * Jauge, ouvertures, première clé et lot du mois :
+     * %shcrates_jauge_<caisse>%, %shcrates_jauge_seuil_<caisse>%, %shcrates_jauge_reste_<caisse>%,
+     * %shcrates_jauge_barre_<caisse>%, %shcrates_ouvertures_<caisse>%, %shcrates_premiere_<caisse>%,
+     * %shcrates_rotation_<caisse>%.
+     */
+    private String progressPlaceholder(OfflinePlayer offlinePlayer, String params) {
+        String[] prefixes = {"jauge_seuil_", "jauge_reste_", "jauge_barre_", "jauge_", "ouvertures_", "premiere_", "rotation_"};
+        for (String prefix : prefixes) {
+            if (!params.startsWith(prefix)) continue;
+            Optional<Crate> crateOpt = crateManager.getCrate(params.substring(prefix.length()));
+            if (crateOpt.isEmpty()) return "Crate_Not_Found";
+            Crate crate = crateOpt.get();
+            String crateId = crate.getId().toLowerCase();
+            var data = playerDataManager.peekPlayerData(offlinePlayer.getUniqueId());
+            Crate.Gauge gauge = crate.getGauge();
+            int current = data.getCounter("jauge-" + crateId);
+            switch (prefix) {
+                case "jauge_seuil_":
+                    return gauge == null ? "" : String.valueOf(gauge.threshold());
+                case "jauge_reste_":
+                    return gauge == null ? "" : String.valueOf(Math.max(1, gauge.threshold() - current));
+                case "jauge_barre_": {
+                    if (gauge == null) return "";
+                    int segments = 20;
+                    int filled = (int) Math.round((double) Math.min(current, gauge.threshold()) / gauge.threshold() * segments);
+                    MessageManager mm = plugin.getMessageManager();
+                    return mm.getRawMessage("placeholder_gauge_filled").repeat(filled)
+                        + mm.getRawMessage("placeholder_gauge_empty").repeat(segments - filled);
+                }
+                case "jauge_":
+                    return gauge == null ? "" : String.valueOf(current);
+                case "ouvertures_":
+                    return String.valueOf(data.getCounter("ouvertures-" + crateId));
+                case "premiere_":
+                    if (crate.getFirstOpenMinTier() == null || data.getCounter("premiere-" + crateId) > 0) return "";
+                    Tier tier = plugin.getConfigManager().getTier(crate.getFirstOpenMinTier());
+                    return plugin.getMessageManager().getRawPrefixedMessage("placeholder_first_open",
+                        MessageManager.ph("%tier%", tier == null ? "" : tier.name()));
+                default: {
+                    String rewardId = crate.getCurrentRotationId();
+                    if (rewardId == null) return "";
+                    return crate.getRewards().stream().filter(r -> r.getId().equals(rewardId)).findFirst()
+                        .map(Reward::getDisplayName).orElse("");
+                }
+            }
+        }
+        return null;
     }
 }

@@ -1,6 +1,8 @@
 package org.Cry_Legende.sHCrates.config;
 
 import org.Cry_Legende.sHCrates.SHCrates;
+import org.Cry_Legende.sHCrates.crates.Tier;
+import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -13,7 +15,12 @@ import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Level;
 
 public class ConfigManager {
@@ -38,6 +45,12 @@ public class ConfigManager {
     // Opening settings
     private int openAllDelayTicks;
     private int autoCloseGUIDelaySeconds;
+    private int openAllMax;
+    private int openAllPerTick;
+    private String keyReceivedSound;
+
+    // Paliers de rareté, par identifiant, dans l'ordre du fichier
+    private Map<String, Tier> tiers = Collections.emptyMap();
 
     // Reroll Settings
     private boolean rerollEnabled;
@@ -101,6 +114,10 @@ public class ConfigManager {
         rewardLogFormat = config.getString("reward_log_format", "%player_name% gagne %reward_name%");
         openAllDelayTicks = config.getInt("open_all_delay_ticks", 2);
         autoCloseGUIDelaySeconds = config.getInt("auto_close_gui_delay_seconds", 7);
+        openAllMax = Math.max(1, config.getInt("ouverture_multiple.max", 200));
+        openAllPerTick = Math.max(1, config.getInt("ouverture_multiple.par_tick", 20));
+        keyReceivedSound = config.getString("son_cle_recue", "ENTITY_EXPERIENCE_ORB_PICKUP");
+        tiers = loadTiers(config.getConfigurationSection("paliers"));
 
         // Load Reroll Settings
         rerollEnabled = config.getBoolean("reroll.enabled", true);
@@ -150,6 +167,57 @@ public class ConfigManager {
     /**
      * Matériau lu en config, ou le repli s'il est invalide (null faisait planter le chargement).
      */
+    private Map<String, Tier> loadTiers(ConfigurationSection section) {
+        Map<String, Tier> loaded = new LinkedHashMap<>();
+        if (section == null) {
+            return loaded;
+        }
+        for (String id : section.getKeys(false)) {
+            ConfigurationSection t = section.getConfigurationSection(id);
+            if (t == null) continue;
+            String glassName = t.getString("vitre", "");
+            Material glass = glassName.isEmpty() ? null : Material.matchMaterial(glassName);
+            loaded.put(id.toLowerCase(Locale.ROOT), new Tier(
+                id.toLowerCase(Locale.ROOT),
+                t.getInt("rang", loaded.size() + 1),
+                ChatUtils.colorize(t.getString("nom", id)),
+                glass,
+                t.getString("son", ""),
+                (float) t.getDouble("volume", 1.0),
+                (float) t.getDouble("hauteur", 1.0),
+                t.getBoolean("feu-artifice", false),
+                t.getBoolean("totem", false),
+                t.getString("titre", ""),
+                t.getString("sous-titre", ""),
+                t.getBoolean("annonce", false)));
+        }
+        return loaded;
+    }
+
+    /** Palier par identifiant (sans tenir compte de la casse), ou null s'il n'existe pas. */
+    public Tier getTier(String id) {
+        return id == null ? null : tiers.get(id.toLowerCase(Locale.ROOT));
+    }
+
+    public Collection<Tier> getTiers() {
+        return tiers.values();
+    }
+
+    /** Nombre maximal de clés ouvertes par une ouverture multiple. */
+    public int getOpenAllMax() {
+        return openAllMax;
+    }
+
+    /** Son joué à la réception de clés d'une caisse qui a AnnonceReception. */
+    public String getKeyReceivedSound() {
+        return keyReceivedSound;
+    }
+
+    /** Clés ouvertes par tick pendant une ouverture multiple. */
+    public int getOpenAllPerTick() {
+        return openAllPerTick;
+    }
+
     private Material materialOr(String name, Material fallback) {
         Material material = name == null ? null : Material.matchMaterial(name);
         if (material == null) {

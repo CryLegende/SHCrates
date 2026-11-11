@@ -5,10 +5,15 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Clés virtuelles d'un joueur. Les méthodes sont synchronisées : en mode réseau, le fil principal et le fil
- * d'écriture vers la base y accèdent tous les deux.
+ * Clés virtuelles d'un joueur et compteurs de progression (jauge, ouvertures, première clé, meilleur palier).
+ * Les compteurs sont rangés dans la même table que les clés, sous un identifiant qui commence par
+ * {@link #COUNTER_PREFIX} : en mode réseau, ils suivent donc le joueur d'un serveur à l'autre comme les clés.
+ * Les méthodes sont synchronisées : en mode réseau, le fil principal et le fil d'écriture vers la base y accèdent tous les deux.
  */
 public class PlayerData {
+
+    /** Préfixe des compteurs dans la table des clés : aucun identifiant de caisse ne commence ainsi. */
+    public static final String COUNTER_PREFIX = "#";
 
     private final UUID playerUUID;
     // Key: Crate InternalID, Value: Amount of virtual keys
@@ -65,8 +70,30 @@ public class PlayerData {
         return false;
     }
 
+    /** Clés virtuelles seulement, sans les compteurs. */
     public synchronized Map<String, Integer> getAllVirtualKeys() {
-        return new HashMap<>(virtualKeys); // Return a copy to prevent external modification
+        Map<String, Integer> keys = new HashMap<>();
+        virtualKeys.forEach((id, amount) -> {
+            if (!id.startsWith(COUNTER_PREFIX)) keys.put(id, amount);
+        });
+        return keys;
+    }
+
+    /** Compteurs de progression, sans le préfixe. */
+    public synchronized Map<String, Integer> getAllCounters() {
+        Map<String, Integer> counters = new HashMap<>();
+        virtualKeys.forEach((id, amount) -> {
+            if (id.startsWith(COUNTER_PREFIX)) counters.put(id.substring(COUNTER_PREFIX.length()), amount);
+        });
+        return counters;
+    }
+
+    public synchronized int getCounter(String counterId) {
+        return getVirtualKeys(COUNTER_PREFIX + counterId);
+    }
+
+    public synchronized void setCounter(String counterId, int value) {
+        setVirtualKeys(COUNTER_PREFIX + counterId, value);
     }
 
     public synchronized void loadFromMap(Map<String, Integer> keysMap) {

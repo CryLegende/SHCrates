@@ -175,7 +175,61 @@ public class CrateManager {
         if (crate.getRewards().isEmpty()) {
             plugin.getLogger().warning("Crate '" + id + "' has no rewards defined or failed to load them.");
         }
+        parseProgression(id, config, crate);
         return crate;
+    }
+
+    /** Jauge de garantie, première clé, ouverture multiple et rotation d'une caisse. */
+    private void parseProgression(String id, FileConfiguration config, Crate crate) {
+        crate.setOpenAllAllowed(config.getBoolean("OuvertureMultiple", true));
+        crate.setAnnounceReception(config.getBoolean("AnnonceReception", false));
+
+        ConfigurationSection gaugeSection = config.getConfigurationSection("Jauge");
+        if (gaugeSection != null) {
+            int threshold = gaugeSection.getInt("Seuil", 0);
+            Set<String> tierIds = new LinkedHashSet<>();
+            for (String tierId : gaugeSection.getStringList("Paliers")) {
+                if (configManager.getTier(tierId) == null) {
+                    plugin.getLogger().warning("Caisse " + id + " : palier inconnu « " + tierId + " » dans Jauge.Paliers.");
+                } else {
+                    tierIds.add(tierId.toLowerCase(Locale.ROOT));
+                }
+            }
+            if (threshold >= 2 && !tierIds.isEmpty()) {
+                crate.setGauge(new Crate.Gauge(threshold, tierIds, ChatUtils.colorize(gaugeSection.getString("Nom", "&eJauge"))));
+            } else {
+                plugin.getLogger().warning("Caisse " + id + " : Jauge ignorée (Seuil d'au moins 2 et un palier connu attendus).");
+            }
+        }
+
+        String firstTier = config.getString("PremiereOuverture", "");
+        if (!firstTier.isEmpty()) {
+            if (configManager.getTier(firstTier) == null) {
+                plugin.getLogger().warning("Caisse " + id + " : palier inconnu « " + firstTier + " » dans PremiereOuverture.");
+            } else {
+                crate.setFirstOpenMinTier(firstTier.toLowerCase(Locale.ROOT));
+            }
+        }
+
+        ConfigurationSection rotationSection = config.getConfigurationSection("Rotation");
+        if (rotationSection != null) {
+            List<String> ids = new ArrayList<>();
+            for (String rewardId : rotationSection.getStringList("Lots")) {
+                boolean exists = crate.getRewards().stream().anyMatch(r -> r.getId().equals(rewardId));
+                if (exists) ids.add(rewardId);
+                else plugin.getLogger().warning("Caisse " + id + " : lot inconnu « " + rewardId + " » dans Rotation.Lots.");
+            }
+            java.time.YearMonth start = null;
+            String startText = rotationSection.getString("Debut", "");
+            if (!startText.isEmpty()) {
+                try {
+                    start = java.time.YearMonth.parse(startText);
+                } catch (java.time.format.DateTimeParseException e) {
+                    plugin.getLogger().warning("Caisse " + id + " : Rotation.Debut « " + startText + " » illisible (format AAAA-MM).");
+                }
+            }
+            crate.setRotation(ids, start);
+        }
     }
 
     private CrateKey parseCrateKey(ConfigurationSection keySection, String crateId) {
@@ -318,6 +372,18 @@ public class CrateManager {
         List<String> blackPerms = rewardConfig.getStringList("Blacklisted-Permissions");
         Reward reward = new Reward(rewardId, displayInPreview, displayName, displayItemMat, playerSkinTexture,
             displayAmount, lore, chance, firework, glowing, hideFlags, commands, messages, reqPerms, blackPerms);
+        String tierId = rewardConfig.getString("Palier", "");
+        if (!tierId.isEmpty()) {
+            if (configManager.getTier(tierId) == null) {
+                plugin.getLogger().warning("Récompense " + rewardId + " (" + crateDisplayName + ") : palier inconnu « " + tierId + " ».");
+            } else {
+                reward.setTierId(tierId.toLowerCase(Locale.ROOT));
+            }
+        }
+        String condition = rewardConfig.getString("Condition", "");
+        if (!condition.isBlank()) {
+            reward.setCondition(condition);
+        }
         ItemBuilder itemBuilder = new ItemBuilder(reward.getDisplayItemMaterial(), reward.getDisplayAmount())
             .setName(reward.getDisplayName())
             .setLore(reward.getLore());
@@ -595,6 +661,21 @@ public class CrateManager {
             plugin.getPlayerDataManager().addVirtualKeys(player.getUniqueId(), crate.getInternalID(), amount);
             messageManager.sendMessage(player, "key_received_virtual", MessageManager.ph("%amount%", String.valueOf(amount), "%crate_name%", crate.getDisplayName()));
         }
+        announceReception(player, crate, amount);
+    }
+
+    /** Message et son à la réception de clés d'une caisse qui a « AnnonceReception: true » (achat, quête, événement). */
+    private void announceReception(Player player, Crate crate, int amount) {
+        if (!crate.isAnnounceReception()) return;
+        messageManager.sendRawMessage(player, "key_received_announce", MessageManager.ph(
+            "%amount%", String.valueOf(amount),
+            "%key_name%", ChatUtils.colorize(crate.getKeyConfig().getName()),
+            "%crate_display_name%", crate.getDisplayName()));
+        org.bukkit.Sound sound = org.Cry_Legende.sHCrates.utils.SoundUtils.sound(configManager.getKeyReceivedSound());
+        if (sound != null) {
+            player.playSound(player.getLocation(), sound, 1f, 1.2f);
+        }
+        plugin.getAnimationManager().sendGaugeStatus(player, crate);
     }
 
     private static String describe(String file, Exception e) {

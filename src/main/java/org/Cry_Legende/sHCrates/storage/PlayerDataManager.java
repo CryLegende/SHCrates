@@ -111,6 +111,12 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
                 }
                 data.loadFromMap(keysMap);
             }
+            ConfigurationSection progressSection = playerConfig.getConfigurationSection("progression");
+            if (progressSection != null) {
+                for (String counterId : progressSection.getKeys(false)) {
+                    data.setCounter(counterId, progressSection.getInt(counterId));
+                }
+            }
         }
         return data;
     }
@@ -136,6 +142,11 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
             virtualKeys.forEach(virtualKeysSection::set);
         } else {
             playerConfig.set("virtual-keys", null); // Supprimer la section si vide
+        }
+        Map<String, Integer> counters = data.getAllCounters();
+        if (!counters.isEmpty()) {
+            ConfigurationSection progressSection = playerConfig.createSection("progression");
+            counters.forEach(progressSection::set);
         }
 
         try {
@@ -212,6 +223,31 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
             else savePlayerData(playerUUID);
         }
         return consumed;
+    }
+
+    // --- Compteurs de progression (jauge, ouvertures, première clé, meilleur palier) ---
+
+    public int getCounter(UUID playerUUID, String counterId) {
+        return getPlayerData(playerUUID).getCounter(counterId);
+    }
+
+    /**
+     * Change un compteur sans l'enregistrer tout de suite : {@link #savePlayerData} suit une ouverture
+     * (ou une série d'ouvertures). En mode réseau, l'écart part en base comme pour les clés.
+     */
+    public void addCounter(UUID playerUUID, String counterId, int delta) {
+        if (delta == 0) return;
+        NetworkKeys net = network;
+        if (net != null) {
+            net.add(getPlayerData(playerUUID), PlayerData.COUNTER_PREFIX + counterId, delta);
+            return;
+        }
+        PlayerData data = getPlayerData(playerUUID);
+        data.setCounter(counterId, Math.max(0, data.getCounter(counterId) + delta));
+    }
+
+    public void setCounter(UUID playerUUID, String counterId, int value) {
+        addCounter(playerUUID, counterId, Math.max(0, value) - getCounter(playerUUID, counterId));
     }
 
     public Map<String, Integer> getAllVirtualKeysForPlayer(UUID playerUUID) {

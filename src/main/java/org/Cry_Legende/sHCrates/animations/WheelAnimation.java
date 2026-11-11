@@ -252,11 +252,6 @@ public class WheelAnimation implements Animation, InventoryHolder {
             gui.setItem(WHEEL_SLOTS[finalStopIndex], winningItem);
             gui.setItem(CURSOR_SLOT, winningItem.clone());
 
-            playSound(player, player.getLocation(), animConfig.getSoundWin());
-            if (chosenReward.hasFireworkOnWin() && physicalCrateLocation != null) {
-                plugin.getAnimationManager().spawnFirework(physicalCrateLocation.clone().add(0.5, 1.5, 0.5));
-            }
-
             if (plugin.getConfigManager().isRerollEnabled()) {
                 int rerollSlot = animConfig.getRerollButtonSlot();
                 if (rerollSlot >= 0 && rerollSlot < gui.getSize()) {
@@ -274,6 +269,7 @@ public class WheelAnimation implements Animation, InventoryHolder {
             if (onAnimationFinishCallback != null) {
                 onAnimationFinishCallback.run();
             }
+            plugin.getAnimationManager().onSpinFinished(player);
 
             int autoCloseDelay = plugin.getConfigManager().getAutoCloseGUIDelaySeconds();
             if (autoCloseDelay > 0) {

@@ -113,11 +113,14 @@ key_refunded_virtual: "&7&l« &a&lSH &8&l» &7Vous avez récupéré votre &akey 
 # /shcrates open & openall
 command_usage_open: "&7&l« &b&lSH &8&l» &7Usage: &b/crate open <crateName> [player]"
 command_usage_openall: "&7&l« &b&lSH &8&l» &7Usage: &b/crate openall <crateName> [player]"
-not_enough_keys_openall: "&7&l« &c&lSH &8&l» &7Vous n'avez que &c%amount% &7clé(s) &c%crate_name%&7 pour en ouvrir plusieurs."
-openall_starting: "&7&l« &d&lSH &8&l» &7Ouverture de &d%amount%&7 caisse(s) &d%crate_name%&7..."
-openall_summary_header: "&a&lRécapitulatif pour %amount% caisse(s) %crate_name% ouvertes:" # Titre de section, pas de préfixe standard
-openall_summary_reward: "&7- &d%reward_name%" # Ligne de résumé
-openall_no_reward_eligible_for_one_roll: "&7&l« &c&lSH &8&l» &7(Pas de récompense éligible pour un tirage)"
+openall_starting: "&7&l« &d&lSH &8&l» &7Ouverture de &d%amount% &7clé(s) %crate_display_name%&7..."
+openall_summary_header: "&7&l« &d&lSH &8&l» &7Vous avez ouvert &d%amount% &7clé(s) %crate_display_name% &7:"
+# Une ligne par lot, du plus courant au plus rare (%count%, %reward_display_name%, %tier%)
+openall_summary_line: "&8• &f%count%× %reward_display_name% &8%tier%"
+openall_summary_best: "&8• &7Meilleur lot : %reward_display_name% &8(%tier%&8)"
+openall_inventory_full: "&7&l« &6&lSH &8&l» &7Inventaire plein : ouverture arrêtée, &6%remaining% &7clé(s) %crate_display_name% &7restante(s)."
+# Caisse avec OuvertureMultiple: false
+openall_not_allowed: "&7&l« &e&lSH &8&l» &7La %crate_display_name% &7s'ouvre une clé à la fois, pour profiter de chaque tirage."
 
 # /shcrates keys
 command_usage_keys: "&7&l« &b&lSH &8&l» &7Usage: &b/crate keys [player]"
@@ -162,6 +165,9 @@ animation_wheel_cursor: "&eSpinning..." # Nom de l'item central de la roue
 # %shcrates_physical_<cratename>% -> valeur numérique
 # %shcrates_virtual_total% -> valeur numérique
 # %shcrates_physical_total% -> valeur numérique
+# %shcrates_jauge_<cratename>%, %shcrates_jauge_seuil_<cratename>%, %shcrates_jauge_reste_<cratename>%
+# %shcrates_jauge_barre_<cratename>%, %shcrates_ouvertures_<cratename>%, %shcrates_premiere_<cratename>%
+# %shcrates_rotation_<cratename>% -> nom du lot en rotation ce mois-ci
 
 # --- Mode réseau (SHNetwork) ---
 network_loading: "&7&l« &e&lSH &8&l» &7Vos &eclés virtuelles &7sont en cours de chargement, réessayez dans un instant."
@@ -174,3 +180,33 @@ import_started: "&7&l« &e&lSH &8&l» &7Importation des clés virtuelles des fic
 import_done: "&7&l« &a&lSH &8&l» &7Importation terminée : &a%imported% &7ligne(s) ajoutée(s), &a%present% &7déjà présente(s)."
 import_failed: "&7&l« &c&lSH &8&l» &7L'importation a échoué, &cvérifiez la console&7."
 import_no_network: "&7&l« &c&lSH &8&l» &7Cette commande demande le &cmode réseau &7(SHNetwork installé et base joignable)."
+
+# --- Paliers, jauge et première clé ---
+# Ligne ajoutée au lore d'un lot qui a un Palier, dans l'aperçu (%tier% : nom du palier)
+preview_tier_line: "&7Rareté : %tier%"
+# Ligne ajoutée au lot en rotation (%end% : dernier jour du mois)
+preview_rotation_line: "&e✦ &7Ce mois-ci seulement, jusqu'au &e%end%"
+# Barre d'action après chaque ouverture d'une caisse qui a une jauge
+# (%gauge_name%, %current%, %threshold%, %remaining%, %crate_display_name%, %tiers%)
+gauge_actionbar: "%gauge_name% &8» &e%current%&7/&e%threshold%"
+gauge_next_guaranteed: "&7&l« &a&lSH &8&l» &7Votre prochaine clé %crate_display_name% &7donne un lot %tiers% &agaranti&7 !"
+guarantee_gauge: "&7&l« &a&lSH &8&l» &7%gauge_name% &7pleine : lot &agaranti&7 !"
+guarantee_first_open: "&7&l« &a&lSH &8&l» &7Première clé %crate_display_name% &7: lot &agaranti&7, bon jeu !"
+# Annonce à tout le serveur d'un lot dont le palier a « annonce: true »
+announce_win: "&7&l« &d&lSH &8&l» &f%player_name% &7a gagné %reward_display_name% &8(%tier%&8) &7dans la %crate_display_name%&7 !"
+# %shcrates_jauge_barre_<caisse>% : 20 segments
+placeholder_gauge_filled: "&6|"
+placeholder_gauge_empty: "&8|"
+# %shcrates_premiere_<caisse>% tant que le joueur n'a jamais ouvert cette caisse (vide ensuite)
+placeholder_first_open: "&e✦ &7Votre première clé donne un lot %tier% &7ou mieux"
+
+# Réception de clés d'une caisse qui a « AnnonceReception: true » (%amount%, %key_name%, %crate_display_name%)
+key_received_announce: "&7&l« &a&lSH &8&l» &7Vous avez reçu &a%amount%× %key_name%&7 ! À ouvrir au &a/box&7."
+
+# --- /crate stats ---
+stats_header: "&7&l« &d&lSH &8&l» &7Box de &d%player% &7:"
+stats_line: "&8• %crate_display_name% &7: &f%opened% &7ouverte(s), meilleur lot %best%"
+stats_gauge_line: "&8   %gauge_name% &7: &e%current%&7/&e%threshold%"
+stats_collection_line: "&8   &7Collection : &d%owned%&7/&d%total%"
+stats_no_best: "&8-"
+stats_empty: "&7&l« &e&lSH &8&l» &e%player% &7n'a encore ouvert aucune box."

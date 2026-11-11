@@ -24,6 +24,10 @@ public class Reward {
     private final List<String> blacklistedPermissions;
 
     private ItemStack displayItemStack; // ItemStack réel pour l'affichage, généré
+    // Palier de rareté (config.yml, paliers), null : ancien comportement (son de la caisse, FireworkOnWin)
+    private String tierId;
+    // Condition PlaceholderAPI (« %placeholder% < 5000 »), null : toujours gagnable
+    private String condition;
 
     public Reward(String id, boolean displayInPreview, String displayName, Material displayItemMaterial, String playerSkinTexture,
                   int displayAmount, List<String> lore, double chance, boolean fireworkOnWin,
@@ -117,5 +121,21 @@ public class Reward {
 
     public void setDisplayItemStack(ItemStack displayItemStack) {
         this.displayItemStack = displayItemStack;
+    }
+
+    public String getTierId() {
+        return tierId;
+    }
+
+    public void setTierId(String tierId) {
+        this.tierId = tierId;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
     }
 }

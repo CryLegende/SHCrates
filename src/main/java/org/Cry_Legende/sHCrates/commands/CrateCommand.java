@@ -41,7 +41,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
     private final MessageManager messageManager;
 
     // /crate : fonctions joueur ; /shcrates : administration. Chaque nom accepte toutes les sous-commandes, sous réserve des droits.
-    private static final List<String> PLAYER_SUBCOMMANDS = List.of("preview", "open", "openall", "keys", "list");
+    private static final List<String> PLAYER_SUBCOMMANDS = List.of("preview", "open", "openall", "keys", "stats", "list");
     private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info");
 
 
@@ -105,6 +105,9 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 break;
             case "keys":
                 handleKeysCommand(sender, args);
+                break;
+            case "stats":
+                handleStatsCommand(sender, args);
                 break;
             case "givekey":
                 handleGiveKeyCommand(sender, args);
@@ -232,6 +235,68 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
         } else {
             plugin.getAnimationManager().attemptStartCrateOpening(targetPlayer, crate, null, false);
         }
+    }
+
+    /** /crate stats [joueur] : clés ouvertes, meilleur palier, jauge et collection, par caisse. */
+    private void handleStatsCommand(CommandSender sender, String[] args) {
+        Player target;
+        if (args.length >= 2) {
+            if (!sender.hasPermission("shcrates.admin.statsothers") && !sender.hasPermission("shcrates.admin")) {
+                messageManager.sendMessage(sender, "no_permission");
+                return;
+            }
+            target = Bukkit.getPlayerExact(args[1]);
+            if (target == null) {
+                if (refuseRemote(sender, args[1])) return;
+                messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[1]));
+                return;
+            }
+        } else {
+            if (!(sender instanceof Player)) {
+                messageManager.sendMessage(sender, "console_cannot_execute_personal");
+                return;
+            }
+            target = (Player) sender;
+        }
+        List<String> lines = new ArrayList<>();
+        List<Crate> crates = new ArrayList<>(crateManager.getAllCrates());
+        crates.sort(java.util.Comparator.comparing(Crate::getId));
+        for (Crate crate : crates) {
+            String crateId = crate.getId().toLowerCase();
+            int opened = playerDataManager.getCounter(target.getUniqueId(), "ouvertures-" + crateId);
+            Crate.Gauge gauge = crate.getGauge();
+            if (opened == 0 && gauge == null) continue;
+            int bestRank = playerDataManager.getCounter(target.getUniqueId(), "meilleur-" + crateId);
+            String best = plugin.getConfigManager().getTiers().stream().filter(t -> t.rank() == bestRank)
+                .map(org.Cry_Legende.sHCrates.crates.Tier::name).findFirst()
+                .orElse(messageManager.getRawMessage("stats_no_best"));
+            lines.add(messageManager.getRawPrefixedMessage("stats_line", MessageManager.ph(
+                "%crate_display_name%", crate.getDisplayName(), "%opened%", String.valueOf(opened), "%best%", best)));
+            if (gauge != null) {
+                int current = playerDataManager.getCounter(target.getUniqueId(), "jauge-" + crateId);
+                lines.add(messageManager.getRawPrefixedMessage("stats_gauge_line", MessageManager.ph(
+                    "%gauge_name%", gauge.name(), "%current%", String.valueOf(current),
+                    "%threshold%", String.valueOf(gauge.threshold()))));
+            }
+            // Collection : les lots qu'on ne peut gagner qu'une fois (Blacklisted-Permissions)
+            int total = 0;
+            int owned = 0;
+            for (var reward : crate.getRewards()) {
+                if (reward.getBlacklistedPermissions().isEmpty()) continue;
+                total++;
+                if (reward.getBlacklistedPermissions().stream().anyMatch(target::hasPermission)) owned++;
+            }
+            if (total > 0) {
+                lines.add(messageManager.getRawPrefixedMessage("stats_collection_line", MessageManager.ph(
+                    "%owned%", String.valueOf(owned), "%total%", String.valueOf(total))));
+            }
+        }
+        if (lines.isEmpty()) {
+            messageManager.sendRawMessage(sender, "stats_empty", MessageManager.ph("%player%", target.getName()));
+            return;
+        }
+        messageManager.sendRawMessage(sender, "stats_header", MessageManager.ph("%player%", target.getName()));
+        lines.forEach(sender::sendMessage);
     }
 
     private void handleKeysCommand(CommandSender sender, String[] args) {
@@ -720,6 +785,11 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                         if (sender.hasPermission("shcrates.admin.previewothers") || sender.hasPermission("shcrates.admin.openothers") || sender.hasPermission("shcrates.admin")) {
                             Bukkit.getOnlinePlayers().stream().map(Player::getName).forEach(suggestions::add);
                         }
+                    }
+                    break;
+                case "stats":
+                    if (args.length == 2 && (sender.hasPermission("shcrates.admin.statsothers") || sender.hasPermission("shcrates.admin"))) {
+                        Bukkit.getOnlinePlayers().stream().map(Player::getName).forEach(suggestions::add);
                     }
                     break;
                 case "keys":

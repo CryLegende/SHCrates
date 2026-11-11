@@ -2,32 +2,31 @@
 InternalID: 14660341-49c1-4ad0-a53f-c2e943292d4a # Sera généré par SHCrates
 
 # Nom d'affichage de la caisse.
-DisplayName: '&e&lBox Ordinaire'
+DisplayName: '&e&lBox Ordinaire' # Importé de CrateName
 
-# Nom du fichier de log de cette caisse dans SHLogs. Par défaut : le nom de ce fichier.
 LogFile: Box_Ordinaire
 
 # Type de bloc que cette caisse prendra.
-BlockType: BARRIER
+BlockType: BARRIER # Importé de Item (de la section Crate principale)
 
 # Configuration de la clé physique.
 Key:
-  Material: TRIPWIRE_HOOK
-  Name: '&eClé Ordinaire'
-  Lore:
+  Material: TRIPWIRE_HOOK # Importé de PhysicalKey.Item
+  Name: '&eClé Ordinaire' # Importé de PhysicalKey.Name
+  Lore: # Importé de PhysicalKey.Lore
     - '&7Ces clés sont obtenables'
     - '&7en votant pour Skyhand !'
     - '&7'
     - '&8&l» &ehttps://skyhand.fr/vote'
     - '&7'
     - '&7Clic droit sur la box &eOrdinaire'
-  Enchanted: true
+  Enchanted: true # Importé de PhysicalKey.Glowing
 
 # Configuration du GUI de preview.
 PreviewGUI:
-  Title: '&7&l« &e&lBox Ordinaire &8&l» &7(aperçu)'
-  Size: 54
-  # Items de remplissage (liste).
+  Title: '&7&l« &e&lBox Ordinaire &8&l» &7(aperçu)' # Importé de Preview-Name
+  Size: 54 # Importé de Preview.ChestLines (6 lignes * 9 slots = 54)
+  # NOUVELLE section FillerItems (une liste)
   FillerItems:
     # Filler par défaut pour les slots non spécifiés (optionnel)
     # DefaultFiller:
@@ -94,7 +93,7 @@ PreviewGUI:
 
 # Configuration de l'animation.
 Animation:
-  Type: QuickCrate
+  Type: QuickCrate # Importé de CrateType: QuickCrate
 # GUITitle: "&8Ouverture..." # Non applicable pour QuickCrate, mais pourrait être défini pour d'autres types
 # SpinDurationTicks: 100 # Non applicable pour QuickCrate
 # SoundOpen: "BLOCK_CHEST_OPEN" # À définir si vous voulez des sons spécifiques
@@ -110,462 +109,89 @@ Animation:
     HologramHeightOffset: 0.5 
 
 # Liste des récompenses.
+
+# Ouverture de toutes les clés d'un coup permise (/crate openall, Shift+clic droit sur la box).
+OuvertureMultiple: true
+
 Rewards:
-  herbe32: # Les ID numériques ne sont pas recommandés, utilisons des noms
-    DisplayInPreview: true # Par défaut
-    DisplayName: '&e32 Herbes'
-    DisplayItem: GRASS_BLOCK
-    DisplayAmount: 32
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 10
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true # Comportement par défaut pour un affichage propre
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% GRASS_BLOCK 32
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a32 herbes &7!'
-  
-  bois_chene32:
+  deco_3:
     DisplayInPreview: true
-    DisplayName: '&e32 Bois de chêne'
-    DisplayItem: OAK_LOG
-    DisplayAmount: 32
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 8
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% OAK_LOG 32
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a32 Bois de chêne &7!'
-  
-  obsidienne4:
-    DisplayInPreview: true
-    DisplayName: '&e4 Obsidienne'
-    DisplayItem: OBSIDIAN
-    DisplayAmount: 4
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 3
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% OBSIDIAN 4
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a4 Obsidiennes &7!'
-  
-  bloc_charbon5:
-    DisplayInPreview: true
-    DisplayName: '&e5 Blocs de Charbon'
-    DisplayItem: COAL_BLOCK
-    DisplayAmount: 5
-    Lore:
-    - '&7&l* &7Chance: &bCommun'
-    - ''
-    Chance: 8
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% coal_block 5
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a5 Blocs de Charbon &7!'
-  
-  luckyblock_jaune1:
-    DisplayInPreview: true
-    DisplayName: '&e1 LuckyBlock Jaune'
-    DisplayItem: PLAYER_HEAD
-    PlayerSkinTexture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTdiYzFiNjRjYmEzZGM0Y2VmZTRlMTIxYzNjZGJiYjBmYTk5YWJhMGUxMTNiNWM5MTY4MTVmYzliMzA0ZTYzNiJ9fX0=
+    DisplayName: '&fItem décoratif: &6✯✯✯'
+    DisplayItem: LANTERN
     DisplayAmount: 1
     Lore:
-    - '&7&l* &7Chance: &eCommun'
+    - '&5Item décoratif &7(/deco)'
+    - '&r'
     - ''
-    Chance: 7
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - ntdluckyblock give %player_name% YELLOW
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a1 LuckyBlock Jaune &7!'
-  
-  diamants8:
-    DisplayInPreview: true
-    DisplayName: '&e8 Diamants'
-    DisplayItem: DIAMOND
-    DisplayAmount: 8
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 5
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% diamond 8
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a8 Diamants &7!'
-  
-  bottes_ordinaires:
-    DisplayInPreview: true
-    DisplayName: '&eBottes Ordinaires'
-    DisplayItem: DIAMOND_BOOTS
-    DisplayAmount: 1
-    Lore:
-    - '&7Protection I'
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 3
+    Chance: 0.1
+    Palier: legendaire
     FireworkOnWin: false
     GlowingDisplayItem: true
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% diamond_boots 1 name:&8[&7Bottes_Ordinaires&8] protection:1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &ades Bottes Ordinaires &7!'
-  
-  xp100:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'rc deco3 %player_name%'
+
+  deco_4:
     DisplayInPreview: true
-    DisplayName: '&6100 EXP'
-    DisplayItem: EXPERIENCE_BOTTLE
-    DisplayAmount: 1 # Visuel
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 10
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - shwithdraw givexpbottle %player_name% 100 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a100 EXP &7!'
-  
-  xp250:
-    DisplayInPreview: true
-    DisplayName: '&6250 EXP'
-    DisplayItem: EXPERIENCE_BOTTLE
-    DisplayAmount: 2 # Visuel
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 6
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - shwithdraw givexpbottle %player_name% 250 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a250 EXP &7!'
-  
-  money1500:
-    DisplayInPreview: true
-    DisplayName: '&61500 ⛁'
-    DisplayItem: PAPER
+    DisplayName: '&fItem décoratif: &c✯✯✯✯'
+    DisplayItem: LANTERN
     DisplayAmount: 1
     Lore:
-    - '&7&l* &7Chance: &eCommun'
+    - '&5Item décoratif &7(/deco)'
+    - '&r'
     - ''
-    Chance: 15
+    Chance: 0.01
+    Palier: legendaire
     FireworkOnWin: false
-    GlowingDisplayItem: false
+    GlowingDisplayItem: true
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - eco give %player_name% 1500
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a1500 ⛁ &7!'
-  
-  money3500:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'rc deco4 %player_name%'
+
+  cle_rare:
     DisplayInPreview: true
-    DisplayName: '&63500 ⛁'
-    DisplayItem: PAPER
-    DisplayAmount: 2
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 10
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - eco give %player_name% 3500
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a3500 ⛁ &7!'
-  
-  money5500:
-    DisplayInPreview: true
-    DisplayName: '&65500 ⛁'
-    DisplayItem: PAPER
-    DisplayAmount: 3
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 7
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - eco give %player_name% 5500
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a5500 ⛁ &7!'
-  
-  fly15min:
-    DisplayInPreview: true
-    DisplayName: '&eFly 15 minutes &7(&e/fly&7)'
-    DisplayItem: FEATHER
+    DisplayName: '&bClé Rare'
+    DisplayItem: TRIPWIRE_HOOK
     DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 3
+    Lore: []
+    Chance: 2
+    Palier: tres_rare
     FireworkOnWin: false
-    GlowingDisplayItem: false
+    GlowingDisplayItem: true
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - tempfly give %player_name% 15m
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &ala commande fly pendant 15 minutes
-      &7!'
-    Blacklisted-Permissions:
-    - shtempfly.fly.unlimited
-  
-  fly30min:
-    DisplayInPreview: true
-    DisplayName: '&eFly 30 minutes &7(&e/fly&7)'
-    DisplayItem: FEATHER
-    DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 3
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - tfly add %player_name% 30m
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &ala commande fly pendant 30 minutes
-      &7!'
-    Blacklisted-Permissions:
-    - shtempfly.fly.unlimited
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shcrates givekey %player_name% rare 1 physical'
+
   item_renamer:
     DisplayInPreview: true
     DisplayName: '&6Renommeur d''item'
     DisplayItem: NAME_TAG
     DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &4Légendaire'
-    - ''
+    Lore: []
     Chance: 1
+    Palier: tres_rare
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - shitemtags give %player_name% itemnametag 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun renommeur d''item &7!'
-  
-  lapis3:
-    DisplayInPreview: true
-    DisplayName: '&e3 Lapis Lazuli'
-    DisplayItem: LAPIS_LAZULI
-    DisplayAmount: 1 # Visuel, la commande donne 3
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 4
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% LAPIS_LAZULI 3
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a3 Lapis Lazuli &7!'
-  
-  afk15min:
-    DisplayInPreview: true
-    DisplayName: '&eTemps AFK 15 minutes'
-    DisplayItem: CLOCK
-    DisplayAmount: 1
-    Lore:
-    - '&8Restez AFK au spawn'
-    - '&8et gagnez de l''argent.'
-    - ''
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 8
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - shafktime add %player_name% 15m
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a15 minutes de temps AFK &7!'
-  
-  afk30min:
-    DisplayInPreview: true
-    DisplayName: '&eTemps AFK 30 minutes'
-    DisplayItem: CLOCK
-    DisplayAmount: 2
-    Lore:
-    - '&8Restez AFK au spawn'
-    - '&8et gagnez de l''argent.'
-    - ''
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 6
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - shafktime add %player_name% 30m
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a30 minutes de temps AFK &7!'
-  
-  redstone3:
-    DisplayInPreview: true
-    DisplayName: '&e3 Redstones' # Nom changé de "Redstones" à "3 Redstones" pour correspondre à la récompense
-    DisplayItem: REDSTONE
-    DisplayAmount: 3 # Visuel
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 3
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% REDSTONE 3
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a3 redstones &7!'
-  
-  wither_tete:
-    DisplayInPreview: true
-    DisplayName: '&6Tête de Wither'
-    DisplayItem: WITHER_SKELETON_SKULL
-    DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 2
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% WITHER_SKELETON_SKULL 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aune tête de wither &7!'
-  
-  enchant_ordinaire:
-    DisplayInPreview: true
-    DisplayName: '&6Enchantement Ordinaire'
-    DisplayItem: BOOK
-    DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &eCommun'
-    - ''
-    Chance: 4
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - advancedenchantments givercbook ordinaire %player_name% 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun Enchantement Ordinaire &7!'
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shitemtags give %player_name% itemnametag 1'
+
   sellstick_box1:
     DisplayInPreview: true
     DisplayName: '&dSellStick &7(&aVente x1&7)'
@@ -582,21 +208,18 @@ Rewards:
     - '&f ou coffre piégé en un clic !'
     - '&8&m------------------------------'
     - ''
-    - '&7&l* &7Chance: &bRare'
-    - ''
     Chance: 1
+    Palier: tres_rare
     FireworkOnWin: false
     GlowingDisplayItem: true
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - tools give %player_name% sellstick_box1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun Sellstick &7(&aVente x1&7) &7!'
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'tools give %player_name% sellstick_box1'
+
   sellstick_box2:
     DisplayInPreview: true
     DisplayName: '&dSellStick &7(&aVente x1.10&7)'
@@ -613,22 +236,277 @@ Rewards:
     - '&f ou coffre piégé en un clic !'
     - '&8&m------------------------------'
     - ''
-    - '&7&l* &7Chance: &bRare'
-    - ''
     Chance: 1
+    Palier: tres_rare
     FireworkOnWin: false
     GlowingDisplayItem: true
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - tools give %player_name% sellstick_box2
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'tools give %player_name% sellstick_box2'
+
+  deco_2:
+    DisplayInPreview: true
+    DisplayName: '&fItem décoratif: &b✯✯'
+    DisplayItem: LANTERN
+    DisplayAmount: 1
+    Lore:
+    - '&5Item décoratif &7(/deco)'
+    - '&r'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: true
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'rc deco2 %player_name%'
+
+  deco_1:
+    DisplayInPreview: true
+    DisplayName: '&fItem décoratif: &e✯'
+    DisplayItem: LANTERN
+    DisplayAmount: 1
+    Lore:
+    - '&5Item décoratif &7(/deco)'
+    - '&r'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: true
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'rc deco1 %player_name%'
+
+  coffre_collecteur_petit:
+    DisplayInPreview: true
+    DisplayName: '&bCoffre collecteur &f(&bpetit&f)'
+    DisplayItem: BARREL
+    DisplayAmount: 1
+    Lore:
+    - '&7Ce coffre contient au'
+    - '&7total &b9 &7slots'
+    - '&7'
+    - '&7Il collecte les items au sol'
+    - '&7dans le chunk ou il se trouve'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'advancedchests give %player_name% collecteur-petit 1'
+
+  ancre_teleportation:
+    DisplayInPreview: true
+    DisplayName: '&5Ancre de Téléportation'
+    DisplayItem: RESPAWN_ANCHOR
+    DisplayAmount: 1
+    Lore:
+    - '&7Placez cette ancre et liez-la'
+    - '&7à une autre pour créer un'
+    - '&7point de &5téléportation&7.'
+    - ''
+    - '&7&o(( &5Accroupissez-vous sur l''ancre'
+    - '&5pour vous &5téléporter ! &7&o))'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shanchors give %player_name% 1'
+
+  oeuf_dragon:
+    DisplayInPreview: true
+    DisplayName: '&5Oeuf de dragon'
+    DisplayItem: DRAGON_EGG
+    DisplayAmount: 1
+    Lore:
+    - '&7 • Posez le sur votre île'
+    - '&7pour voir celle ci augmenter'
+    - '&7de 1000 levels ! (&b/is level&7)'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% dragon_egg 1'
+
+  briques_resine_2:
+    DisplayInPreview: true
+    DisplayName: '&22 Briques de résine'
+    DisplayItem: RESIN_BRICK
+    DisplayAmount: 2
+    Lore:
+    - '&7 • Donnez-en 10 au cœur du Creaking'
+    - '&7posé sur votre île (clic droit)'
+    - '&7pour réveiller le boss &2Creaking&7.'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'sheggdragonboss give %player_name% briques 2'
+
+  tokens10:
+    DisplayInPreview: true
+    DisplayName: '&610 TOKENS &7(monnaie site)'
+    DisplayItem: GOLD_NUGGET
+    DisplayAmount: 10
+    Lore: []
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: true
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'azlink money add %player_name% 10'
+
+  titre_farm2win:
+    DisplayInPreview: true
+    DisplayName: '&fTitre &7[&2Farm2Win&7]'
+    DisplayItem: WHEAT
+    DisplayAmount: 1
+    Lore:
+    - '&9TITRE'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'lp user %player_name% permission set tag.farm2win'
     Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun Sellstick &7(&aVente x1.10&7)
-      &7!'
-  
+    - '&7&l« &6&lSH &8&l» &7ᴛɪᴘѕ : Ce titre est activable via le &e/titre'
+    Blacklisted-Permissions:
+    - tag.farm2win
+
+  titre_progamer:
+    DisplayInPreview: true
+    DisplayName: '&fTitre &7[&fPro&9Gamer&7]'
+    DisplayItem: PLAYER_HEAD
+    PlayerSkinTexture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzdjYTJhYThhOWY1ZDMyNDZlZTdmMmQwN2UxZDVmZDQ4MTkxMjVlY2RkZjVhNzJlMmY2NzUzNTVhM2I5YmNjIn19fQ==
+    DisplayAmount: 1
+    Lore:
+    - '&9TITRE'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'lp user %player_name% permission set tag.progamer'
+    Messages:
+    - '&7&l« &6&lSH &8&l» &7ᴛɪᴘѕ : Ce titre est activable via le &e/titre'
+    Blacklisted-Permissions:
+    - tag.progamer
+
+  particule_notes:
+    DisplayInPreview: true
+    DisplayName: '&fParticule &3Notes'
+    DisplayItem: NOTE_BLOCK
+    DisplayAmount: 1
+    Lore:
+    - '&9PARTICULE'
+    - ''
+    Chance: 1
+    Palier: tres_rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'lp user %player_name% permission set particule.notes'
+    Messages:
+    - '&7&l« &6&lSH &8&l» &7ᴛɪᴘѕ : Cette particule est activable via le &e/part'
+    Blacklisted-Permissions:
+    - particule.notes
+
+  spawner_cochon:
+    DisplayInPreview: true
+    DisplayName: '&61 Spawner à Cochon'
+    DisplayItem: SPAWNER
+    DisplayAmount: 1
+    Lore: []
+    Chance: 8
+    Palier: rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'ws give %player_name% spawner Pig 1'
+
+  spawner_poulet:
+    DisplayInPreview: true
+    DisplayName: '&61 Spawner à Poulet'
+    DisplayItem: SPAWNER
+    DisplayAmount: 1
+    Lore: []
+    Chance: 8
+    Palier: rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'ws give %player_name% spawner chicken 1'
+
   spawner_mystere_commun:
     DisplayInPreview: true
     DisplayName: '&6Spawner Mystère &7(&eCommun&7)'
@@ -648,245 +526,184 @@ Rewards:
     - ''
     - '&8&l» &fClic droit &7pour utiliser'
     - ''
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 3
+    Chance: 6
+    Palier: rare
     FireworkOnWin: false
     GlowingDisplayItem: true
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - voucher give mysteryspawner1 1 %player_name%
-    - shlogs Box_Ordinaire %player_name% Spawner mystère commun
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun Spawner Mystère &7(&aCommun&7)
-      !'
-  
-  spawner_cochon:
-    DisplayInPreview: true
-    DisplayName: '&61 Spawner à Cochon'
-    DisplayItem: SPAWNER
-    DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 6
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - ws give %player_name% spawner Pig 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun spawner à cochon &7!'
-  
-  spawner_poulet:
-    DisplayInPreview: true
-    DisplayName: '&61 Spawner à Poulet'
-    DisplayItem: SPAWNER
-    DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 6
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - ws give %player_name% spawner chicken 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun spawner à Poulet &7!'
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'voucher give mysteryspawner1 1 %player_name%'
+
   spawner_lapin:
     DisplayInPreview: true
     DisplayName: '&61 Spawner à Lapin'
     DisplayItem: SPAWNER
     DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
+    Lore: []
     Chance: 5
+    Palier: rare
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - ws give %player_name% spawner rabbit 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun spawner à Lapin &7!'
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'ws give %player_name% spawner rabbit 1'
+
   spawner_mouton:
     DisplayInPreview: true
     DisplayName: '&61 Spawner à Mouton'
     DisplayItem: SPAWNER
     DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
+    Lore: []
     Chance: 5
+    Palier: rare
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - ws give %player_name% spawner Sheep 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun spawner à Mouton &7!'
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'ws give %player_name% spawner Sheep 1'
+
   spawner_zombie:
     DisplayInPreview: true
     DisplayName: '&61 Spawner à Zombie'
     DisplayItem: SPAWNER
     DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
+    Lore: []
     Chance: 4
+    Palier: rare
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - ws give %player_name% spawner Zombie 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun spawner à Zombie &7!'
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'ws give %player_name% spawner Zombie 1'
+
+  enchant_ordinaire:
+    DisplayInPreview: true
+    DisplayName: '&6Enchantement Ordinaire'
+    DisplayItem: BOOK
+    DisplayAmount: 1
+    Lore: []
+    Chance: 4
+    Palier: rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shenchants give rcbook %player_name% ordinaire 1'
+
+  redstone3:
+    DisplayInPreview: true
+    DisplayName: '&e3 Redstones'
+    DisplayItem: REDSTONE
+    DisplayAmount: 3
+    Lore: []
+    Chance: 3
+    Palier: rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% REDSTONE 3'
+
+  fly15min:
+    DisplayInPreview: true
+    DisplayName: '&eFly 15 minutes &7(&e/fly&7)'
+    DisplayItem: FEATHER
+    DisplayAmount: 1
+    Lore: []
+    Chance: 3
+    Palier: rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'tempfly give %player_name% 15m'
+    Blacklisted-Permissions:
+    - shtempfly.fly.unlimited
+
+  fly30min:
+    DisplayInPreview: true
+    DisplayName: '&eFly 30 minutes &7(&e/fly&7)'
+    DisplayItem: FEATHER
+    DisplayAmount: 1
+    Lore: []
+    Chance: 3
+    Palier: rare
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'tfly add %player_name% 30m'
+    Blacklisted-Permissions:
+    - shtempfly.fly.unlimited
+
   spawner_araignee:
     DisplayInPreview: true
-    DisplayName: '&61 Spawner a Araignée' # 'a' au lieu de 'à'
+    DisplayName: '&61 Spawner a Araignée'
     DisplayItem: SPAWNER
     DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
+    Lore: []
     Chance: 2
+    Palier: rare
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - ws give %player_name% spawner Spider 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun spawner a araignée &7!'
-  
-  deco_1:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'ws give %player_name% spawner Spider 1'
+
+  wither_tete:
     DisplayInPreview: true
-    DisplayName: '&fItem décoratif: &e✯'
-    DisplayItem: LANTERN
+    DisplayName: '&6Tête de Wither'
+    DisplayItem: WITHER_SKELETON_SKULL
     DisplayAmount: 1
-    Lore:
-    - '&5Item décoratif &7(/deco)'
-    - '&r'
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 1
+    Lore: []
+    Chance: 2
+    Palier: rare
     FireworkOnWin: false
-    GlowingDisplayItem: true
+    GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - rc deco1 %player_name%
-    - shlogs Box_Ordinaire %player_name% gagne une décoration ✯
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner une &edécoration ✯ &7! (/deco)'
-  
-  deco_2:
-    DisplayInPreview: true
-    DisplayName: '&fItem décoratif: &b✯✯'
-    DisplayItem: LANTERN
-    DisplayAmount: 1
-    Lore:
-    - '&5Item décoratif &7(/deco)'
-    - '&r'
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 1
-    FireworkOnWin: false
-    GlowingDisplayItem: true
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - rc deco2 %player_name%
-    - shlogs Box_Ordinaire %player_name% gagne une décoration ✯✯
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner une &bdécoration ✯✯ &7! (/deco)'
-  
-  deco_3:
-    DisplayInPreview: true
-    DisplayName: '&fItem décoratif: &6✯✯✯'
-    DisplayItem: LANTERN
-    DisplayAmount: 1
-    Lore:
-    - '&5Item décoratif &7(/deco)'
-    - '&r'
-    - '&7&l* &7Chance: &9Très rare'
-    - ''
-    Chance: 0.1
-    FireworkOnWin: false
-    GlowingDisplayItem: true
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - rc deco3 %player_name%
-    - shlogs Box_Ordinaire %player_name% gagne une décoration ✯✯✯
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner une &6décoration ✯✯✯ &7! (/deco)'
-  
-  deco_4:
-    DisplayInPreview: true
-    DisplayName: '&fItem décoratif: &c✯✯✯✯'
-    DisplayItem: LANTERN
-    DisplayAmount: 1
-    Lore:
-    - '&5Item décoratif &7(/deco)'
-    - '&r'
-    - '&7&l* &7Chance: &4Légendaire'
-    - ''
-    Chance: 0.01
-    FireworkOnWin: false
-    GlowingDisplayItem: true
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - rc deco4 %player_name%
-    - shlogs Box_Ordinaire %player_name% gagne une décoration ✯✯✯✯
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner une &cdécoration ✯✯✯✯ &7! (/deco)'
-  
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% WITHER_SKELETON_SKULL 1'
+
   coffre_ameliore_petit:
     DisplayInPreview: true
     DisplayName: '&eCoffre amélioré &f(&ePetit&f)'
@@ -897,224 +714,296 @@ Rewards:
     - '&7total &e450 &7slots'
     - '&7(10 pages)'
     - ''
-    - '&7&l* &7Chance: &bRare'
-    - ''
     Chance: 2
-    FireworkOnWin: true
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - advancedchests give %player_name% petit 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun Coffre amélioré (Petit) &7!'
-  
-  coffre_collecteur_petit:
-    DisplayInPreview: true
-    DisplayName: '&bCoffre collecteur &f(&bpetit&f)'
-    DisplayItem: BARREL
-    DisplayAmount: 1
-    Lore:
-    - '&7Ce coffre contient au'
-    - '&7total &b9 &7slots'
-    - '&7'
-    - '&7Il collecte les items au sol'
-    - '&7dans le chunk ou il se trouve'
-    - ''
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 1
-    FireworkOnWin: true
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - advancedchests give %player_name% collecteur-petit 1
-    - shlogs Box_Ordinaire %player_name% gagne Coffre collecteur (petit)
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun Coffre collecteur (Petit) &7!'
-  
-  ancre_teleportation:
-    DisplayInPreview: true
-    DisplayName: '&5Ancre de Téléportation'
-    DisplayItem: RESPAWN_ANCHOR
-    DisplayAmount: 1
-    Lore:
-    - '&7Placez cette ancre et liez-la'
-    - '&7à une autre pour créer un'
-    - '&7point de &5téléportation&7.'
-    - ''
-    - '&7&o(( &5Accroupissez-vous sur l''ancre'
-    - '&5pour vous &5téléporter ! &7&o))'
-    - ''
-    - '&7&l* &7Chance: &4Légendaire'
-    - ''
-    Chance: 1
+    Palier: rare
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - shanchors give %player_name% 1
-    - shlogs Box_Ordinaire %player_name% gagne Ancre de Téléportation
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aune Ancre de Téléportation &7!'
-  
-  oeuf_dragon:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'advancedchests give %player_name% petit 1'
+
+  money1500:
     DisplayInPreview: true
-    DisplayName: '&5Oeuf de dragon'
-    DisplayItem: DRAGON_EGG
+    DisplayName: '&61500 ⛁'
+    DisplayItem: PAPER
     DisplayAmount: 1
-    Lore:
-    - '&7 • Posez le sur votre île'
-    - '&7pour voir celle ci augmenter'
-    - '&7de 1000 levels ! (&b/is level&7)'
-    - ''
-    - '&7&l* &7Chance: &4Légendaire'
-    - ''
-    Chance: 1 # Idem, 0.1 si c'était 0.1%
+    Lore: []
+    Chance: 15
+    Palier: commun
+    Condition: '%vault_eco_balance% < 2000000'
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - give %player_name% dragon_egg 1
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aun oeuf de dragon &7!'
-  
-  cle_rare:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'eco give %player_name% 1500'
+
+  luckyblock_jaune1:
     DisplayInPreview: true
-    DisplayName: '&bClé Rare'
-    DisplayItem: TRIPWIRE_HOOK
-    DisplayAmount: 1
-    Lore:
-    - '&7&l* &7Chance: &bRare'
-    - ''
-    Chance: 2
-    FireworkOnWin: true
-    GlowingDisplayItem: true
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - shcrates givekey %player_name% rare 1 physical
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &aune Clé rare &7!'
-  
-  tokens10:
-    DisplayInPreview: true
-    DisplayName: '&610 TOKENS &7(monnaie site)'
-    DisplayItem: GOLD_NUGGET
-    DisplayAmount: 10
-    Lore:
-    - '&7&l* &7Chance: &9Très rare'
-    - ''
-    Chance: 1
-    FireworkOnWin: false
-    GlowingDisplayItem: true
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - azlink money add %player_name% 10
-    - shlogs Box_Ordinaire %player_name% gagne 10 TOKENS
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous venez de gagner &a10 TOKENS &7(monnaie site) !'
-  
-  titre_farm2win:
-    DisplayInPreview: true
-    DisplayName: '&fTitre &7[&2Farm2Win&7]'
-    DisplayItem: WHEAT
-    DisplayAmount: 1
-    Lore:
-    - '&9TITRE'
-    - ''
-    - '&7* Chance: &6Très Rare'
-    - ''
-    Chance: 1
-    FireworkOnWin: false
-    GlowingDisplayItem: false
-    HideItemFlags: true
-    Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - lp user %player_name% permission set tag.farm2win
-    - shlogs Box_Ordinaire %player_name% gagne le titre Farm2Win
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous avez obtenu le titre &7[&2Farm2Win&7] !'
-    - '&7&l« &6&lSH &8&l» &7ᴛɪᴘѕ : Ce titre est activable via le &e/titre'
-    Blacklisted-Permissions:
-    - tag.farm2win
-  
-  titre_progamer:
-    DisplayInPreview: true
-    DisplayName: '&fTitre &7[&fPro&9Gamer&7]'
+    DisplayName: '&e1 LuckyBlock Jaune'
     DisplayItem: PLAYER_HEAD
-    PlayerSkinTexture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzdjYTJhYThhOWY1ZDMyNDZlZTdmMmQwN2UxZDVmZDQ4MTkxMjVlY2RkZjVhNzJlMmY2NzUzNTVhM2I5YmNjIn19fQ==
+    PlayerSkinTexture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTdiYzFiNjRjYmEzZGM0Y2VmZTRlMTIxYzNjZGJiYjBmYTk5YWJhMGUxMTNiNWM5MTY4MTVmYzliMzA0ZTYzNiJ9fX0=
     DisplayAmount: 1
-    Lore:
-    - '&9TITRE'
-    - ''
-    - '&7&l* &7Chance: &6Très Rare'
-    - ''
-    Chance: 1
+    Lore: []
+    Chance: 11
+    Palier: commun
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - lp user %player_name% permission set tag.progamer
-    - shlogs Box_Ordinaire %player_name% gagne le titre ProGamer
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous avez obtenu le titre &7[&fPro&9Gamer&7] !'
-    - '&7&l« &6&lSH &8&l» &7ᴛɪᴘѕ : Ce titre est activable via le &e/titre'
-    Blacklisted-Permissions:
-    - tag.progamer
-  
-  particule_notes:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'ntdluckyblock give %player_name% YELLOW'
+
+  money3500:
     DisplayInPreview: true
-    DisplayName: '&fParticule &3Notes'
-    DisplayItem: NOTE_BLOCK
-    DisplayAmount: 1
-    Lore:
-    - '&9PARTICULE'
-    - ''
-    - '&7&l* &7Chance: &6Très Rare'
-    - ''
-    Chance: 1
+    DisplayName: '&63500 ⛁'
+    DisplayItem: PAPER
+    DisplayAmount: 2
+    Lore: []
+    Chance: 10
+    Palier: commun
+    Condition: '%vault_eco_balance% < 2000000'
     FireworkOnWin: false
     GlowingDisplayItem: false
     HideItemFlags: true
     Commands:
-    - tournament custom BOX %player_name%
-    - shprogress progress %player_name% tree/boxordinaire1 1
-    - shprogress progress %player_name% tree/boxordinaire2 1
-    - shprogress progress %player_name% tree/boxordinaire3 1
-    - lp user %player_name% permission set particule.notes
-    - shlogs Box_Ordinaire %player_name% gagne la particule Notes
-    Messages:
-    - '&7&l« &a&lSH &8&l» &7Vous avez obtenu la Particule &3Notes !'
-    - '&7&l« &6&lSH &8&l» &7ᴛɪᴘѕ : Cette particule est activable via le &e/part'
-    Blacklisted-Permissions:
-    - particule.notes
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'eco give %player_name% 3500'
+
+  xp100:
+    DisplayInPreview: true
+    DisplayName: '&6100 EXP'
+    DisplayItem: EXPERIENCE_BOTTLE
+    DisplayAmount: 1
+    Lore: []
+    Chance: 10
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shwithdraw givexpbottle %player_name% 100 1'
+
+  afk15min:
+    DisplayInPreview: true
+    DisplayName: '&eTemps AFK 15 minutes'
+    DisplayItem: CLOCK
+    DisplayAmount: 1
+    Lore:
+    - '&8Restez AFK au spawn'
+    - '&8et gagnez de l''argent.'
+    - ''
+    Chance: 10
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shafktime add %player_name% 15m'
+
+  xp250:
+    DisplayInPreview: true
+    DisplayName: '&6250 EXP'
+    DisplayItem: EXPERIENCE_BOTTLE
+    DisplayAmount: 2
+    Lore: []
+    Chance: 9
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shwithdraw givexpbottle %player_name% 250 1'
+
+  afk30min:
+    DisplayInPreview: true
+    DisplayName: '&eTemps AFK 30 minutes'
+    DisplayItem: CLOCK
+    DisplayAmount: 2
+    Lore:
+    - '&8Restez AFK au spawn'
+    - '&8et gagnez de l''argent.'
+    - ''
+    Chance: 8
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'shafktime add %player_name% 30m'
+
+  money5500:
+    DisplayInPreview: true
+    DisplayName: '&65500 ⛁'
+    DisplayItem: PAPER
+    DisplayAmount: 3
+    Lore: []
+    Chance: 7
+    Palier: commun
+    Condition: '%vault_eco_balance% < 2000000'
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'eco give %player_name% 5500'
+
+  herbe32:
+    DisplayInPreview: true
+    DisplayName: '&e32 Herbes'
+    DisplayItem: GRASS_BLOCK
+    DisplayAmount: 32
+    Lore: []
+    Chance: 5
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% GRASS_BLOCK 32'
+
+  diamants8:
+    DisplayInPreview: true
+    DisplayName: '&e8 Diamants'
+    DisplayItem: DIAMOND
+    DisplayAmount: 8
+    Lore: []
+    Chance: 5
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% diamond 8'
+
+  bois_chene32:
+    DisplayInPreview: true
+    DisplayName: '&e32 Bois de chêne'
+    DisplayItem: OAK_LOG
+    DisplayAmount: 32
+    Lore: []
+    Chance: 4
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% OAK_LOG 32'
+
+  bloc_charbon5:
+    DisplayInPreview: true
+    DisplayName: '&e5 Blocs de Charbon'
+    DisplayItem: COAL_BLOCK
+    DisplayAmount: 5
+    Lore: []
+    Chance: 4
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% coal_block 5'
+
+  lapis3:
+    DisplayInPreview: true
+    DisplayName: '&e3 Lapis Lazuli'
+    DisplayItem: LAPIS_LAZULI
+    DisplayAmount: 1
+    Lore: []
+    Chance: 2
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% LAPIS_LAZULI 3'
+
+  obsidienne4:
+    DisplayInPreview: true
+    DisplayName: '&e4 Obsidienne'
+    DisplayItem: OBSIDIAN
+    DisplayAmount: 4
+    Lore: []
+    Chance: 1.5
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: false
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% OBSIDIAN 4'
+
+  bottes_ordinaires:
+    DisplayInPreview: true
+    DisplayName: '&eBottes Ordinaires'
+    DisplayItem: DIAMOND_BOOTS
+    DisplayAmount: 1
+    Lore:
+    - '&7Protection I'
+    - ''
+    Chance: 1.5
+    Palier: commun
+    FireworkOnWin: false
+    GlowingDisplayItem: true
+    HideItemFlags: true
+    Commands:
+    - 'tournament custom BOX %player_name%'
+    - 'shprogress progress %player_name% tree/boxordinaire1 1'
+    - 'shprogress progress %player_name% tree/boxordinaire2 1'
+    - 'shprogress progress %player_name% tree/boxordinaire3 1'
+    - 'give %player_name% diamond_boots 1 name:&8[&7Bottes_Ordinaires&8] protection:1'
