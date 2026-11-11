@@ -14,37 +14,40 @@
 # dans les mondes 'spawn' et 'Easter', qui n'existent que sur le serveur du spawn, donc les caisses physiques
 # ne se trouvent que là. Les clés physiques sont des objets et suivent le joueur.
 #
-# Commandes (/shcrates, alias /crate et /shcr) :
-#   /shcrates help                                                   Affiche l'aide.
-#   /shcrates list                                                   Liste les caisses.
-#   /shcrates preview <caisse> [joueur]                              Ouvre l'aperçu d'une caisse.
-#   /shcrates open <caisse> [joueur]                                 Ouvre une caisse.
-#   /shcrates openall <caisse> [joueur]                              Ouvre toutes les clés d'une caisse.
-#   /shcrates keys [joueur]                                          Affiche les clés d'un joueur.
+# Commandes : /crate (joueurs) et /shcrates (administration, alias /shcr). Chacune accepte toutes les sous-commandes,
+# sous réserve des permissions ; sans argument, une ligne d'usage ne liste que celles que l'expéditeur peut utiliser.
+#   /crate preview <caisse> [joueur]                              Ouvre l'aperçu d'une caisse.
+#   /crate open <caisse> [joueur]                                 Ouvre une caisse.
+#   /crate openall <caisse> [joueur]                              Ouvre toutes les clés d'une caisse.
+#   /crate keys [joueur]                                          Affiche les clés d'un joueur.
+#   /crate list                                                   Liste les caisses.
 #   /shcrates givekey <joueur> <caisse> <nombre> [physical|virtual]  Donne des clés à un joueur.
 #   /shcrates takekey <joueur> <caisse> <nombre> [physical|virtual]  Retire des clés à un joueur.
 #   /shcrates giveall <caisse> <nombre> [physical|virtual]           Donne des clés à tous les joueurs en ligne.
 #   /shcrates setblock <caisse>                                      Définit le bloc visé comme caisse.
-#   /shcrates removeblock [confirm]                                  Retire la caisse du bloc visé.
-#   /shcrates reload                                                 Recharge la configuration.
+#   /shcrates removeblock                                            Retire la caisse du bloc visé.
+#   /shcrates info <caisse>                                          Nom, bloc, clé, animation, récompenses et blocs posés.
+#   /shcrates reload                                                 Relit config.yml, messages.yml, crates/ et locations.yml. Un
+#                                                                    fichier illisible ou une caisse inutilisable annule tout.
 #   /shcrates import                                                 Avec SHNetwork : copie les clés virtuelles de playerdata/ dans la base.
 #
 # Permissions :
-#   shcrates.command.base           Utiliser /shcrates (par défaut : tous les joueurs).
-#   shcrates.command.list           /shcrates list
-#   shcrates.command.keys           /shcrates keys
-#   shcrates.command.keys.others    /shcrates keys <joueur>
-#   shcrates.open.<caisse|*>        Ouvrir une caisse.
-#   shcrates.preview.<caisse|*>     Voir l'aperçu d'une caisse.
-#   shcrates.reroll.<caisse|*>      Relancer une récompense.
-#   shcrates.removeblock.<caisse>   Casser le bloc d'une caisse.
-#   shcrates.admin                  Toutes les commandes d'administration (par défaut : op).
-#   shcrates.admin.<commande>       Une commande d'administration : givekey, takekey, giveall,
-#                                   setblock, removeblock, reload.
+#   shcrates.use                    Utiliser /crate et les sous-commandes joueur (par défaut : tous les joueurs).
+#   shcrates.list                   /crate list (par défaut : op).
+#   shcrates.keys                   /crate keys (par défaut : op).
+#   shcrates.open.<caisse|*>        Ouvrir une caisse, par exemple shcrates.open.ordinaire (par défaut : op).
+#   shcrates.preview.<caisse|*>     Voir l'aperçu d'une caisse, par exemple shcrates.preview.rare (par défaut : op).
+#   shcrates.reroll.<caisse|*>      Relancer une récompense, par exemple shcrates.reroll.legendaire (par défaut : op).
+#   shcrates.removeblock.<caisse>   Casser le bloc d'une caisse, par exemple shcrates.removeblock.noel (par défaut : op).
+#   shcrates.bypass.creative        Ouvrir une caisse en mode créatif (par défaut : op, ne se déduit pas de shcrates.admin).
+#   shcrates.admin                  Toutes les commandes d'administration, et l'aperçu et l'ouverture de toutes les caisses
+#                                   (par défaut : op).
+#   shcrates.admin.<commande>       Une commande d'administration : givekey, takekey, giveall, setblock, removeblock,
+#                                   reload, import, info.
 #   shcrates.admin.previewothers    Ouvrir l'aperçu d'un autre joueur.
 #   shcrates.admin.openothers       Ouvrir une caisse pour un autre joueur.
 #   shcrates.admin.keysothers       Voir les clés d'un autre joueur.
-#   shcrates.admin.creativebypass   Ouvrir une caisse en mode créatif.
+#   shcrates.*                      Tous les droits ci-dessus.
 #
 # ======================================================================== #
 

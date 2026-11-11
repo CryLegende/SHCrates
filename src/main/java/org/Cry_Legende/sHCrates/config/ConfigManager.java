@@ -4,6 +4,7 @@ import org.Cry_Legende.sHCrates.SHCrates;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -66,7 +67,27 @@ public class ConfigManager {
             plugin.getLogger().info("Loading config.yml...");
         }
 
-        config = YamlConfiguration.loadConfiguration(configFile);
+        apply(YamlConfiguration.loadConfiguration(configFile));
+    }
+
+    /** Lit config.yml sans rien appliquer. */
+    public YamlConfiguration parse() throws IOException, InvalidConfigurationException {
+        configFile = new File(plugin.getDataFolder(), "config.yml");
+        if (!configFile.exists()) {
+            plugin.saveDefaultConfig();
+        }
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.load(configFile);
+        return yaml;
+    }
+
+    public YamlConfiguration getYaml() {
+        return (YamlConfiguration) config;
+    }
+
+    /** Remplace les réglages par ceux d'une lecture réussie de config.yml. */
+    public void apply(YamlConfiguration yaml) {
+        config = yaml;
 
         // Charger les valeurs
         debugMode = config.getBoolean("debug_mode", false);
@@ -136,15 +157,6 @@ public class ConfigManager {
             return fallback;
         }
         return material;
-    }
-
-    public void reloadConfigs() {
-        if (configFile == null) {
-            configFile = new File(plugin.getDataFolder(), "config.yml");
-        }
-        config = YamlConfiguration.loadConfiguration(configFile);
-        loadConfigs();
-        plugin.getLogger().info("config.yml has been reloaded.");
     }
 
     public void saveConfig() {
@@ -230,7 +242,7 @@ public class ConfigManager {
 
     public FileConfiguration getConfig() {
         if (config == null) {
-            reloadConfigs();
+            loadConfigs();
         }
         return config;
     }

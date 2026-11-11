@@ -17,38 +17,89 @@ libraries:
 
 commands:
   shcrates:
-    description: Commande principale pour SHCrates.
+    description: Administration de SHCrates (clés, blocs de caisse, rechargement).
     aliases:
-      - crate
       - shcr
-    permission: shcrates.command.base # Permission de base pour utiliser la commande, des sous-permissions géreront les actions
-    usage: |
-      §cUtilisation incorrecte. Commandes disponibles:
-      §e/shcrates help §7- Affiche cette aide.
-      §e/shcrates list §7- Liste toutes les crates.
-      §e/shcrates preview <crateName> [player] §7- Ouvre le preview d'une crate.
-      §e/shcrates open <crateName> [player] §7- Ouvre une crate.
-      §e/shcrates openall <crateName> [player] §7- Ouvre toutes les clés d'une crate.
-      §e/shcrates givekey <player> <crateName> <amount> [physical|virtual] §7- Donne des clés.
-      §e/shcrates keys [player] §7- Affiche vos clés.
-      §cCommandes Admin:
-      §e/shcrates reload §7- Recharge la configuration du plugin.
-      §e/shcrates setblock <crateName> §7- Définit un bloc comme crate.
-      §e/shcrates removeblock §7- Supprime une crate d'un bloc.
-      §e/shcrates import §7- Copie les clés virtuelles des fichiers vers la base du réseau.
+    usage: /shcrates <givekey|takekey|giveall|setblock|removeblock|info|reload|import>
+  crate:
+    description: Aperçu, ouverture et clés des caisses.
+    usage: /crate <preview|open|openall|keys|list>
 
 permissions:
   shcrates.*:
     description: Donne accès à toutes les fonctionnalités de SHCrates.
     children:
       shcrates.admin: true
-      shcrates.command.base: true
-      # Les permissions d'ouverture/preview par crate seront dynamiques (ex: shcrates.open.ordinaire)
+      shcrates.use: true
+      # Les permissions d'ouverture/preview par caisse sont dynamiques (ex: shcrates.open.ordinaire)
 
-  shcrates.admin:
-    description: Permet d'utiliser les commandes d'administration (reload, setblock, removeblock, givekey).
+  shcrates.use:
+    description: Utiliser /crate et les sous-commandes joueur de /shcrates (preview, open, openall).
+    default: true
+  shcrates.list:
+    description: /crate list, la liste des caisses.
+    default: op
+  shcrates.keys:
+    description: /crate keys, voir ses clés.
+    default: op
+  shcrates.open.*:
+    description: Ouvrir n'importe quelle caisse (par caisse, shcrates.open.<caisse>).
+    default: op
+  shcrates.preview.*:
+    description: Voir l'aperçu de n'importe quelle caisse (par caisse, shcrates.preview.<caisse>).
+    default: op
+  shcrates.reroll.*:
+    description: Relancer la récompense de n'importe quelle caisse (par caisse, shcrates.reroll.<caisse>).
+    default: op
+  shcrates.bypass.creative:
+    description: Ouvrir une caisse en mode créatif.
     default: op
 
-  shcrates.command.base:
-    description: Permet d'utiliser les commandes de base de SHCrates (list, preview, open, openall, keys).
-    default: true
+  shcrates.admin:
+    description: Toute l'administration de SHCrates, et l'aperçu et l'ouverture de toutes les caisses.
+    default: op
+    children:
+      shcrates.admin.reload: true
+      shcrates.admin.givekey: true
+      shcrates.admin.takekey: true
+      shcrates.admin.giveall: true
+      shcrates.admin.setblock: true
+      shcrates.admin.removeblock: true
+      shcrates.admin.import: true
+      shcrates.admin.info: true
+      shcrates.admin.previewothers: true
+      shcrates.admin.openothers: true
+      shcrates.admin.keysothers: true
+  shcrates.admin.reload:
+    description: Recharger la configuration, les messages, les caisses et les emplacements.
+    default: op
+  shcrates.admin.givekey:
+    description: Donner des clés à un joueur.
+    default: op
+  shcrates.admin.takekey:
+    description: Retirer des clés à un joueur.
+    default: op
+  shcrates.admin.giveall:
+    description: Donner des clés à tous les joueurs en ligne.
+    default: op
+  shcrates.admin.setblock:
+    description: Définir le bloc visé comme caisse.
+    default: op
+  shcrates.admin.removeblock:
+    description: Retirer une caisse du bloc visé, ou casser un bloc de caisse.
+    default: op
+  shcrates.admin.import:
+    description: Copier les clés virtuelles de playerdata/ dans la base du réseau.
+    default: op
+  shcrates.admin.info:
+    description: Consulter une caisse chargée.
+    default: op
+  shcrates.admin.previewothers:
+    description: Ouvrir l'aperçu d'une caisse pour un autre joueur.
+    default: op
+  shcrates.admin.openothers:
+    description: Ouvrir une caisse pour un autre joueur.
+    default: op
+  shcrates.admin.keysothers:
+    description: Voir les clés d'un autre joueur.
+    default: op

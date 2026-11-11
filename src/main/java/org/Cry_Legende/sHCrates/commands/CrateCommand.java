@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CrateCommand implements CommandExecutor, TabCompleter {
@@ -41,8 +40,9 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
     private final GUIManager guiManager;
     private final MessageManager messageManager;
 
-    private final List<String> adminSubCommands = List.of("givekey", "takekey", "giveall", "reload", "setblock", "removeblock", "import");
-    private final List<String> playerSubCommands = List.of("help", "list", "preview", "open", "openall", "keys");
+    // /crate : fonctions joueur ; /shcrates : administration. Chaque nom accepte toutes les sous-commandes, sous réserve des droits.
+    private static final List<String> PLAYER_SUBCOMMANDS = List.of("preview", "open", "openall", "keys", "list");
+    private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info");
 
 
     public CrateCommand(SHCrates plugin) {
@@ -53,19 +53,44 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
         this.messageManager = plugin.getMessageManager();
     }
 
+    private static boolean admin(CommandSender sender, String sub) {
+        return sender.hasPermission("shcrates.admin." + sub) || sender.hasPermission("shcrates.admin");
+    }
+
+    /** Sous-commandes que l'expéditeur peut utiliser (preview, open et openall dépendent des droits par caisse). */
+    private List<String> allowedSubCommands(CommandSender sender) {
+        List<String> allowed = new ArrayList<>();
+        if (sender.hasPermission("shcrates.use")) {
+            for (String sub : PLAYER_SUBCOMMANDS) {
+                boolean ok = switch (sub) {
+                    case "list" -> sender.hasPermission("shcrates.list") || sender.hasPermission("shcrates.admin");
+                    case "keys" -> sender.hasPermission("shcrates.keys") || sender.hasPermission("shcrates.admin");
+                    default -> true;
+                };
+                if (ok) allowed.add(sub);
+            }
+        }
+        for (String sub : ADMIN_SUBCOMMANDS) {
+            if (admin(sender, sub)) allowed.add(sub);
+        }
+        return allowed;
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (args.length == 0) {
-            sendHelpMessage(sender);
+        List<String> allowed = allowedSubCommands(sender);
+        String subCommand = args.length == 0 ? "" : args[0].toLowerCase();
+        if (!allowed.contains(subCommand)) {
+            boolean known = PLAYER_SUBCOMMANDS.contains(subCommand) || ADMIN_SUBCOMMANDS.contains(subCommand);
+            if (known || allowed.isEmpty()) {
+                messageManager.sendMessage(sender, "no_permission");
+            } else {
+                messageManager.sendMessage(sender, "usage", MessageManager.ph("%command%", command.getName(), "%subcommands%", String.join("|", allowed)));
+            }
             return true;
         }
 
-        String subCommand = args[0].toLowerCase();
-
         switch (subCommand) {
-            case "help":
-                sendHelpMessage(sender);
-                break;
             case "list":
                 handleListCrates(sender);
                 break;
@@ -103,57 +128,14 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 handleImportCommand(sender);
                 break;
             default:
-                messageManager.sendMessage(sender, "unknown_command", MessageManager.ph("%command%", subCommand));
-                sendHelpMessage(sender);
+                handleInfoCommand(sender, args);
                 break;
         }
         return true;
     }
 
-    private void sendHelpMessage(CommandSender sender) {
-        messageManager.sendRawMessage(sender, "command_usage_help_header", Collections.emptyMap());
-        for (String cmd : playerSubCommands) {
-            String usage = plugin.getCommand("shcrates").getUsage().lines()
-                .filter(line -> line.contains("/shcrates " + cmd) || line.contains("/shc " + cmd)) // Gérer les alias
-                .map(line -> line.split(" - ", 2)[0]) // Prendre seulement la partie commande
-                .findFirst().orElse("/shcrates " + cmd); // Fallback
-            messageManager.sendRawMessage(sender, "command_usage_line", MessageManager.ph(
-                "%command%", ChatUtils.colorize(usage.replace("§e", "&e").replace("§7", "&7").replace("§c", "&c")),
-                "%description%", getCommandDescription(cmd)
-            ));
-        }
-        if (sender.hasPermission("shcrates.admin")) {
-            messageManager.sendRawMessage(sender, "command_usage_admin_header", Collections.emptyMap());
-            for (String cmd : adminSubCommands) {
-                String usage = plugin.getCommand("shcrates").getUsage().lines()
-                    .filter(line -> line.contains("/shcrates " + cmd) || line.contains("/shc " + cmd))
-                    .map(line -> line.split(" - ", 2)[0])
-                    .findFirst().orElse("/shcrates " + cmd);
-                messageManager.sendRawMessage(sender, "command_usage_line", MessageManager.ph(
-                    "%command%", ChatUtils.colorize(usage.replace("§e", "&e").replace("§7", "&7").replace("§c", "&c")),
-                    "%description%", getCommandDescription(cmd)
-                ));
-            }
-        }
-    }
-
-    private String getCommandDescription(String subCommand) {
-        String usageMessage = plugin.getCommand("shcrates").getUsage();
-        for (String line : usageMessage.split("\n")) {
-            // Adapter pour mieux matcher la sous-commande
-            if (line.matches(".*(/shcrates|/shc) " + Pattern.quote(subCommand) + "(\\s.*|\\s*)-.*")) {
-                String[] parts = line.split(" - ", 2);
-                if (parts.length > 1) {
-                    return ChatUtils.colorize(parts[1].replace("§7", "&7").replace("§e", "&e").replace("§c", "&c"));
-                }
-            }
-        }
-        return "Description non trouvée.";
-    }
-
-
     private void handleListCrates(CommandSender sender) {
-        if (!sender.hasPermission("shcrates.command.list") && !sender.hasPermission("shcrates.admin")) {
+        if (!sender.hasPermission("shcrates.list") && !sender.hasPermission("shcrates.admin")) {
             messageManager.sendMessage(sender, "no_permission");
             return;
         }
@@ -278,11 +260,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             }
             targetPlayer = (Player) sender;
         }
-        if (!sender.equals(targetPlayer) && !sender.hasPermission("shcrates.command.keys.others") && !sender.hasPermission("shcrates.admin")) {
-            messageManager.sendMessage(sender, "no_permission");
-            return;
-        }
-        if (!targetPlayer.hasPermission("shcrates.command.keys") && !targetPlayer.hasPermission("shcrates.admin")) {
+        if (!targetPlayer.hasPermission("shcrates.keys") && !targetPlayer.hasPermission("shcrates.admin")) {
             messageManager.sendMessage(sender, "no_permission_for_target", MessageManager.ph("%player%", targetPlayer.getName()));
             return;
         }
@@ -661,35 +639,75 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleReloadCommand(CommandSender sender) {
-        if (!sender.hasPermission("shcrates.admin.reload") && !sender.hasPermission("shcrates.admin")) {
+        if (!admin(sender, "reload")) {
             messageManager.sendMessage(sender, "no_permission");
             return;
         }
+        List<String> errors;
         try {
-            crateManager.reloadAll();
-            messageManager.sendMessage(sender, "reload_success");
+            errors = crateManager.reloadAll();
         } catch (Exception e) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error during SHCrates reload", e);
             messageManager.sendMessage(sender, "reload_failure");
+            return;
+        }
+        if (!errors.isEmpty()) {
+            for (String error : errors) {
+                int split = error.indexOf('\n');
+                messageManager.sendMessage(sender, "reload_error", MessageManager.ph("%file%", error.substring(0, split), "%error%", error.substring(split + 1)));
+            }
+            return;
+        }
+        messageManager.sendMessage(sender, "reload_success");
+        messageManager.sendMessage(sender, "reload_network_notice");
+    }
+
+    private void handleInfoCommand(CommandSender sender, String[] args) {
+        if (!admin(sender, "info")) {
+            messageManager.sendMessage(sender, "no_permission");
+            return;
+        }
+        if (args.length < 2) {
+            messageManager.sendMessage(sender, "command_usage_info");
+            return;
+        }
+        Optional<Crate> crateOpt = crateManager.getCrate(args[1]);
+        if (crateOpt.isEmpty()) {
+            messageManager.sendMessage(sender, "crate_not_exist", MessageManager.ph("%crate_name%", args[1]));
+            return;
+        }
+        Crate crate = crateOpt.get();
+        messageManager.sendMessage(sender, "info_header", MessageManager.ph("%crate_id%", crate.getId(), "%crate_display_name%", crate.getDisplayName()));
+        messageManager.sendRawMessage(sender, "info_block", MessageManager.ph("%block%", String.valueOf(crate.getBlockType())));
+        messageManager.sendRawMessage(sender, "info_key", MessageManager.ph("%key%", String.valueOf(crate.getKeyConfig().getMaterial()),
+            "%key_name%", String.valueOf(crate.getKeyConfig().getName())));
+        messageManager.sendRawMessage(sender, "info_animation", MessageManager.ph("%animation%", String.valueOf(crate.getAnimationConfig().getType())));
+        messageManager.sendRawMessage(sender, "info_rewards", MessageManager.ph("%count%", String.valueOf(crate.getRewards().size()),
+            "%weight%", String.format(java.util.Locale.ROOT, "%.2f", crate.getTotalChanceWeight())));
+        Map<String, Integer> perWorld = crateManager.placedBlocksByWorld(crate.getId());
+        if (perWorld.isEmpty()) {
+            messageManager.sendRawMessage(sender, "info_blocks_none", Collections.emptyMap());
+        } else {
+            int total = perWorld.values().stream().mapToInt(Integer::intValue).sum();
+            messageManager.sendRawMessage(sender, "info_blocks", MessageManager.ph("%count%", String.valueOf(total),
+                "%worlds%", perWorld.entrySet().stream().map(e -> e.getKey() + " " + e.getValue()).collect(Collectors.joining(", "))));
         }
     }
 
     @Nullable
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+        List<String> allowed = allowedSubCommands(sender);
         List<String> completions = new ArrayList<>();
         List<String> suggestions = new ArrayList<>();
         String currentArg = args[args.length - 1].toLowerCase();
 
         if (args.length == 1) {
-            suggestions.addAll(playerSubCommands);
-            if (sender.hasPermission("shcrates.admin")) {
-                suggestions.addAll(adminSubCommands);
-            }
+            suggestions.addAll(allowed);
         } else {
             String subCommand = args[0].toLowerCase();
-            if (adminSubCommands.contains(subCommand) && !sender.hasPermission("shcrates.admin") && !sender.hasPermission("shcrates.admin." + subCommand)) {
-                return Collections.emptyList(); // Pas de suggestion si pas la perm admin de base
+            if (!allowed.contains(subCommand)) {
+                return Collections.emptyList();
             }
 
             switch (subCommand) {
@@ -699,7 +717,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                     if (args.length == 2) { // <crateName>
                         crateManager.getAllCrates().stream().map(Crate::getId).forEach(suggestions::add);
                     } else if (args.length == 3) { // [player]
-                        if (sender.hasPermission("shcrates.admin.previewothers") || sender.hasPermission("shcrates.admin.openothers")) {
+                        if (sender.hasPermission("shcrates.admin.previewothers") || sender.hasPermission("shcrates.admin.openothers") || sender.hasPermission("shcrates.admin")) {
                             Bukkit.getOnlinePlayers().stream().map(Player::getName).forEach(suggestions::add);
                         }
                     }
@@ -711,7 +729,6 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                     break;
                 case "givekey":
                 case "takekey":
-                    // Permission déjà vérifiée au début du switch pour les commandes admin
                     if (args.length == 2) { // <player>
                         Bukkit.getOnlinePlayers().stream().map(Player::getName).forEach(suggestions::add);
                     } else if (args.length == 3) { // <crateName>
@@ -732,11 +749,13 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                     }
                     break;
                 case "setblock":
+                case "info":
                     if (args.length == 2) { // <crateName>
                         crateManager.getAllCrates().stream().map(Crate::getId).forEach(suggestions::add);
                     }
                     break;
-                // removeblock, reload, list, help n'ont pas besoin de complétion d'arguments spécifique ici
+                default:
+                    break;
             }
         }
         StringUtil.copyPartialMatches(currentArg, suggestions, completions);

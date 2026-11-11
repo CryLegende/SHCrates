@@ -107,23 +107,8 @@ public class CrateManager {
                 continue;
             }
             try {
-                Crate crate = parseCrate(crateId, config);
+                Crate crate = buildCrate(crateId, config);
                 if (crate != null) {
-                    String internalId = config.getString("InternalID");
-                    boolean saveConfigBack = false;
-                    if (internalId == null || internalId.isEmpty()) {
-                        internalId = UUID.randomUUID().toString();
-                        config.set("InternalID", internalId);
-                        saveConfigBack = true;
-                        plugin.getLogger().info("Generated new InternalID for crate: " + crateId);
-                    }
-                    crate.setInternalID(internalId);
-                    ItemStack physicalKey = createPhysicalKeyItem(crate);
-                    crate.setPhysicalKeyItem(physicalKey);
-
-                    if (saveConfigBack) {
-                        crateConfigManager.saveCrateConfig(crateId, config);
-                    }
                     loadedCrates.put(crateId.toLowerCase(), crate);
                     plugin.getLogger().info("Successfully loaded crate: " + crate.getDisplayName() + " (ID: " + crateId + ")");
                 }
@@ -133,6 +118,29 @@ public class CrateManager {
         }
         loadCrateLocations();
         plugin.getLogger().info("Loaded " + loadedCrates.size() + " crate types.");
+    }
+
+    /** Construit une caisse depuis son fichier (identifiant interne généré et réécrit s'il manque), sans l'enregistrer. */
+    private Crate buildCrate(String crateId, FileConfiguration config) {
+        Crate crate = parseCrate(crateId, config);
+        if (crate == null) {
+            return null;
+        }
+        String internalId = config.getString("InternalID");
+        boolean saveConfigBack = false;
+        if (internalId == null || internalId.isEmpty()) {
+            internalId = UUID.randomUUID().toString();
+            config.set("InternalID", internalId);
+            saveConfigBack = true;
+            plugin.getLogger().info("Generated new InternalID for crate: " + crateId);
+        }
+        crate.setInternalID(internalId);
+        ItemStack physicalKey = createPhysicalKeyItem(crate);
+        crate.setPhysicalKeyItem(physicalKey);
+        if (saveConfigBack) {
+            crateConfigManager.saveCrateConfig(crateId, config);
+        }
+        return crate;
     }
 
     private Crate parseCrate(String id, FileConfiguration config) {
@@ -589,13 +597,95 @@ public class CrateManager {
         }
     }
 
-    public void reloadAll() {
-        plugin.getLogger().info("Reloading SHCrates...");
-        configManager.reloadConfigs();
-        messageManager.reloadMessages();
+    private static String describe(String file, Exception e) {
+        String reason = String.valueOf(e.getMessage()).strip();
+        int newline = reason.indexOf('\n');
+        return file + "\n" + (newline < 0 ? reason : reason.substring(0, newline));
+    }
+
+    /**
+     * Relit config.yml, messages.yml, chaque fichier de crates/ et locations.yml. Tout est d'abord lu à part : si un
+     * fichier est illisible, ou si une caisse est inutilisable, rien n'est remplacé et l'état précédent reste en
+     * place. Ne touche ni à playerdata/ ni à locations.yml en écriture.
+     *
+     * @return une entrée « fichier\nerreur » par fichier en erreur, vide si tout a été rechargé
+     */
+    public List<String> reloadAll() {
+        List<String> errors = new ArrayList<>();
+        YamlConfiguration newConfig = null;
+        YamlConfiguration newMessages = null;
+        try {
+            newConfig = configManager.parse();
+        } catch (IOException | InvalidConfigurationException e) {
+            errors.add(describe("config.yml", e));
+        }
+        try {
+            newMessages = messageManager.parse();
+        } catch (IOException | InvalidConfigurationException e) {
+            errors.add(describe("messages.yml", e));
+        }
+        Map<String, FileConfiguration> crateConfigs = new LinkedHashMap<>();
+        for (File crateFile : crateConfigManager.getCrateConfigFiles()) {
+            try {
+                crateConfigs.put(crateFile.getName().replace(".yml", ""), crateConfigManager.parseCrateConfig(crateFile));
+            } catch (IOException | InvalidConfigurationException e) {
+                errors.add(describe("crates/" + crateFile.getName(), e));
+            }
+        }
+        String locationsName = newConfig != null ? newConfig.getString("storage.crate_locations_file", "locations.yml") : configManager.getCrateLocationsFileName();
+        if (locationsName == null || locationsName.isEmpty()) {
+            locationsName = "locations.yml";
+        }
+        File newLocationsFile = new File(plugin.getDataFolder(), locationsName);
+        if (newLocationsFile.exists()) {
+            try {
+                new YamlConfiguration().load(newLocationsFile);
+            } catch (IOException | InvalidConfigurationException e) {
+                errors.add(describe(locationsName, e));
+            }
+        }
+        if (!errors.isEmpty()) {
+            return errors;
+        }
+
+        // Les caisses se construisent avec les nouveaux réglages ; si l'une est inutilisable, on remet les anciens
+        YamlConfiguration oldConfig = configManager.getYaml();
+        configManager.apply(newConfig);
+        Map<String, Crate> rebuilt = new LinkedHashMap<>();
+        for (Map.Entry<String, FileConfiguration> entry : crateConfigs.entrySet()) {
+            try {
+                Crate crate = buildCrate(entry.getKey(), entry.getValue());
+                if (crate == null) {
+                    errors.add("crates/" + entry.getKey() + ".yml\nsection Key absente ou invalide");
+                } else {
+                    rebuilt.put(entry.getKey().toLowerCase(), crate);
+                }
+            } catch (Exception e) {
+                errors.add(describe("crates/" + entry.getKey() + ".yml", e));
+            }
+        }
+        if (!errors.isEmpty()) {
+            configManager.apply(oldConfig);
+            return errors;
+        }
+
+        messageManager.apply(newMessages);
+        loadedCrates.clear();
+        loadedCrates.putAll(rebuilt);
         setupLocationsFile();
-        loadCrates();
-        plugin.getPlayerDataManager().saveAndReloadAllPlayerData();
-        plugin.getLogger().info("SHCrates reloaded successfully.");
+        loadCrateLocations();
+        plugin.getLogger().info("SHCrates reloaded: " + loadedCrates.size() + " crate types.");
+        return errors;
+    }
+
+    /** Nombre de blocs posés par caisse (clé : identifiant de la caisse en minuscules), par monde. */
+    public Map<String, Integer> placedBlocksByWorld(String crateId) {
+        Map<String, Integer> perWorld = new java.util.TreeMap<>();
+        for (CrateLocation location : crateLocations.values()) {
+            if (location.getCrateId().equalsIgnoreCase(crateId)) {
+                perWorld.merge(location.getWorldName(), 1, Integer::sum);
+            }
+        }
+        return perWorld;
     }
 }

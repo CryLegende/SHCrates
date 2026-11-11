@@ -33,7 +33,6 @@ console_cannot_execute: "&7&l« &c&lSH &8&l» &7Cette commande ne peut être ex�
 console_cannot_execute_personal: "&7&l« &c&lSH &8&l» &7La console doit spécifier un nom de joueur pour utiliser cette commande."
 reload_success: "&7&l« &a&lSH &8&l» &7La configuration de SHCrates a été rechargée &aavec succès&7 !"
 reload_failure: "&7&l« &c&lSH &8&l» &7Une erreur est survenue lors du rechargement de la configuration. &cVérifiez la console pour plus de détails&7."
-unknown_command: "&7&l« &c&lSH &8&l» &7Commande inconnue: &c%command%&7. Utilisez &b/shcrates help&7 pour la liste des commandes."
 error_occurred: "&7&l« &c&lSH &8&l» &7Une erreur est survenue: &c%details%"
 error_gui_load: "&7&l« &c&lSH &8&l» &7Erreur lors du chargement du GUI: &c%details%"
 invalid_amount: "&7&l« &c&lSH &8&l» &7Montant invalide: &c%amount%&7."
@@ -65,6 +64,23 @@ no_permission_reroll: "&7&l« &c&lSH &8&l» &7Vous n'avez pas la permission de r
 no_more_rerolls: "&7&l« &c&lSH &8&l» &7Vous avez déjà utilisé votre relance pour cette ouverture."
 reroll_failed_no_reward: "&7&l« &c&lSH &8&l» &7La relance a échoué car aucune autre récompense n'a pu être choisie pour vous."
 
+# /crate et /shcrates sans argument ou avec une sous-commande inconnue (%subcommands% : celles que l'expéditeur peut utiliser)
+usage: "&7&l« &b&lSH &8&l» &7Utilisation : &b/%command% <%subcommands%>"
+command_usage_info: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates info <crateName>"
+
+# /shcrates reload
+reload_error: "&7&l« &c&lSH &8&l» &7Rechargement annulé, &crien n'a été changé&7. Fichier &c%file%&7 : &c%error%"
+reload_network_notice: "&8• &7Les clés de &breseau &7demandent un redémarrage."
+
+# /shcrates info
+info_header: "&7&l« &d&lSH &8&l» &7Caisse &d%crate_id% &7(&f%crate_display_name%&7)"
+info_block: "&8• &7Bloc : &f%block%"
+info_key: "&8• &7Clé : &f%key% &7(%key_name%&7)"
+info_animation: "&8• &7Animation : &f%animation%"
+info_rewards: "&8• &7Récompenses : &f%count% &7(poids total &f%weight%&7)"
+info_blocks: "&8• &7Blocs posés sur ce serveur : &f%count% &7(%worlds%)"
+info_blocks_none: "&8• &7Aucun bloc posé sur ce serveur."
+
 # /shcrates giveall
 command_usage_giveallkeys: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates giveall <crateName> <amount> [physical|virtual]"
 keys_given_to_all: "&7&l« &a&lSH &8&l» &7Vous avez donné &a%amount% &7clé(s) &a%key_type% %crate_name% &7à &a%player_count% &7joueur(s) en ligne."
@@ -72,14 +88,11 @@ keys_offline_player_not_supported_yet: "&7&l« &c&lSH &8&l» &7Afficher les clé
 
 # --- Commandes /shcrates ---
 # /shcrates help & list
-command_usage_help_header: "&f&l« &d&lSHCrates Aide &f&l»" # Pas de préfixe standard, c'est un titre
-command_usage_line: "&d%command% &7- %description%" # Ligne de la liste d'aide
-command_usage_admin_header: "&c&lCommandes Administrateur:" # Titre de section
 crate_list_header: "&d&lListe des box disponibles:" # Titre de section
 crate_list_entry: "&7- &d%crate_id% &7(&f%crate_display_name%&7)" # Ligne de la liste de caisses
 
 # /shcrates preview
-command_usage_preview: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates preview <crateName> [player]"
+command_usage_preview: "&7&l« &b&lSH &8&l» &7Usage: &b/crate preview <crateName> [player]"
 preview_gui_title: "&8Aperçu: &d%crate_display_name%" # Titre de GUI
 preview_item_lore_chance: "&7Chance: &b%chance%%" # Lore d'item
 preview_item_lore_no_permission_to_win: "&cVous n'avez pas la permission de gagner cet item." # Lore d'item
@@ -98,8 +111,8 @@ key_refunded_physical: "&7&l« &a&lSH &8&l» &7Vous avez récupéré votre &akey
 key_refunded_virtual: "&7&l« &a&lSH &8&l» &7Vous avez récupéré votre &akey virtuelle&7."
 
 # /shcrates open & openall
-command_usage_open: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates open <crateName> [player]"
-command_usage_openall: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates openall <crateName> [player]"
+command_usage_open: "&7&l« &b&lSH &8&l» &7Usage: &b/crate open <crateName> [player]"
+command_usage_openall: "&7&l« &b&lSH &8&l» &7Usage: &b/crate openall <crateName> [player]"
 not_enough_keys_openall: "&7&l« &c&lSH &8&l» &7Vous n'avez que &c%amount% &7clé(s) &c%crate_name%&7 pour en ouvrir plusieurs."
 openall_starting: "&7&l« &d&lSH &8&l» &7Ouverture de &d%amount%&7 caisse(s) &d%crate_name%&7..."
 openall_summary_header: "&a&lRécapitulatif pour %amount% caisse(s) %crate_name% ouvertes:" # Titre de section, pas de préfixe standard
@@ -107,7 +120,7 @@ openall_summary_reward: "&7- &d%reward_name%" # Ligne de résumé
 openall_no_reward_eligible_for_one_roll: "&7&l« &c&lSH &8&l» &7(Pas de récompense éligible pour un tirage)"
 
 # /shcrates keys
-command_usage_keys: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates keys [player]"
+command_usage_keys: "&7&l« &b&lSH &8&l» &7Usage: &b/crate keys [player]"
 player_keys_header: "&d&lVos Clés de box:" # Titre de section
 player_keys_virtual_format: "&7- &d%crate_name%&7: &b%amount% &7(Virtuelle)" # Ligne de liste
 player_keys_physical_format: "&7- &d%crate_name%&7: &b%amount% &7(Physique)" # Ligne de liste
@@ -132,7 +145,7 @@ command_usage_setblock: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates setblock <cra
 crate_block_set: "&7&l« &a&lSH &8&l» &7Le bloc que vous regardez a été défini comme une caisse &a%crate_name%&7."
 
 # /shcrates removeblock
-command_usage_removeblock: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates removeblock [confirm]"
+command_usage_removeblock: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates removeblock"
 crate_block_removed: "&7&l« &a&lSH &8&l» &7La caisse a été retirée du bloc que vous regardez."
 crate_block_removed_by_break: "&7&l« &d&lSH &8&l» &7La caisse &d%crate_name%&7 a été retirée car le bloc a été cassé."
 no_permission_break_crate: "&7&l« &c&lSH &8&l» &7Vous n'avez pas la permission de casser la caisse &c%crate_display_name%&7."

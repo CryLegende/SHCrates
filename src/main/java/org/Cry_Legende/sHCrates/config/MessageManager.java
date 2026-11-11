@@ -3,6 +3,7 @@ package org.Cry_Legende.sHCrates.config;
 import org.Cry_Legende.sHCrates.SHCrates;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -66,13 +67,34 @@ public class MessageManager {
         }
     }
 
-    public void reloadMessages() {
+    /** Lit messages.yml sans rien appliquer, avec les valeurs du jar pour toute clé absente. */
+    public YamlConfiguration parse() throws IOException, InvalidConfigurationException {
         if (messagesFile == null) {
             messagesFile = new File(plugin.getDataFolder(), "messages.yml");
         }
-        messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
-        loadMessages(); // Recharge les valeurs
-        plugin.getLogger().info("messages.yml has been reloaded.");
+        if (!messagesFile.exists()) {
+            plugin.saveResource("messages.yml", false);
+        }
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.load(messagesFile);
+        try (InputStream in = plugin.getResource("messages.yml")) {
+            if (in != null) {
+                YamlConfiguration bundled = new YamlConfiguration();
+                bundled.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+                for (String key : bundled.getKeys(true)) {
+                    if (!bundled.isConfigurationSection(key) && !yaml.contains(key)) {
+                        yaml.set(key, bundled.get(key));
+                    }
+                }
+            }
+        }
+        return yaml;
+    }
+
+    /** Remplace les messages par ceux d'une lecture réussie. */
+    public void apply(YamlConfiguration yaml) {
+        messagesConfig = yaml;
+        prefix = messagesConfig.getString("prefix", "&f&l« &d&lSH &f&l» &f");
     }
 
     public String getMessage(String key) {

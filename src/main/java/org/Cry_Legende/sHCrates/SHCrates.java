@@ -19,6 +19,7 @@ import org.Cry_Legende.sHCrates.network.ShNetworkLink;
 import org.Cry_Legende.sHCrates.placeholders.SHCratesExpansion;
 import org.Cry_Legende.sHCrates.storage.PlayerDataManager;
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -158,8 +159,13 @@ public final class SHCrates extends JavaPlugin {
     }
 
     private void registerCommands() {
-        Objects.requireNonNull(getCommand("shcrates")).setExecutor(new CrateCommand(this));
-        // Le TabCompleter sera ajouté à CrateCommand plus tard si besoin
+        // /shcrates (administration) et /crate (fonctions joueur) partagent le même exécuteur
+        CrateCommand executor = new CrateCommand(this);
+        for (String name : new String[]{"shcrates", "crate"}) {
+            PluginCommand command = Objects.requireNonNull(getCommand(name));
+            command.setExecutor(executor);
+            command.setTabCompleter(executor);
+        }
     }
 
     private void registerListeners() {

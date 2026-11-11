@@ -62,6 +62,13 @@ public class CrateConfigManager {
         return crateFiles;
     }
 
+    /** Lit un fichier de caisse en laissant remonter l'erreur de syntaxe. */
+    public YamlConfiguration parseCrateConfig(File crateFile) throws IOException, InvalidConfigurationException {
+        YamlConfiguration crateConfig = new YamlConfiguration();
+        crateConfig.load(crateFile);
+        return crateConfig;
+    }
+
     public FileConfiguration loadCrateConfig(File crateFile) {
         if (!crateFile.exists()) {
             plugin.getLogger().warning("Crate file " + crateFile.getName() + " does not exist!");

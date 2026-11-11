@@ -43,17 +43,42 @@ Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (
 
 ## Commandes
 
+`/crate` est la commande des joueurs, `/shcrates` (alias `/shcr`) celle de l'administration. Les deux acceptent toutes les sous-commandes, sous réserve des permissions : `/shcrates preview` et `/shcrates open` continuent de marcher. Sans argument, ou avec une sous-commande inconnue, une ligne d'usage ne liste que les sous-commandes permises à l'expéditeur.
+
 | Commande | Alias | Description | Permission |
 |---|---|---|---|
-| `/shcrates` | `/crate`, `/shcr` | Commande principale pour SHCrates. | `shcrates.command.base` |
+| `/crate preview <caisse> [joueur]` | `/shcrates preview` | Ouvre l'aperçu d'une caisse. | `shcrates.use` et `shcrates.preview.<caisse>` |
+| `/crate open <caisse> [joueur]` | `/shcrates open` | Ouvre une caisse. | `shcrates.use` et `shcrates.open.<caisse>` |
+| `/crate openall <caisse> [joueur]` | `/shcrates openall` | Ouvre toutes les clés d'une caisse. | idem `open` |
+| `/crate keys [joueur]` | `/shcrates keys` | Affiche les clés d'un joueur. | `shcrates.keys` ; autre joueur : `shcrates.admin.keysothers` |
+| `/crate list` | `/shcrates list` | Liste les caisses. | `shcrates.list` |
+| `/shcrates givekey <joueur> <caisse> <nombre> [physical\|virtual]` | `/shcr` | Donne des clés. | `shcrates.admin.givekey` |
+| `/shcrates takekey <joueur> <caisse> <nombre> [physical\|virtual]` | `/shcr` | Retire des clés. | `shcrates.admin.takekey` |
+| `/shcrates giveall <caisse> <nombre> [physical\|virtual]` | `/shcr` | Donne des clés à tous les joueurs en ligne. | `shcrates.admin.giveall` |
+| `/shcrates setblock <caisse>` | `/shcr` | Définit le bloc visé comme caisse. | `shcrates.admin.setblock` |
+| `/shcrates removeblock` | `/shcr` | Retire la caisse du bloc visé. | `shcrates.admin.removeblock` |
+| `/shcrates info <caisse>` | `/shcr` | Nom, bloc, clé, animation, récompenses et blocs posés. | `shcrates.admin.info` |
+| `/shcrates reload` | `/shcr` | Relit `config.yml`, `messages.yml`, `crates/` et `locations.yml`. Un fichier illisible ou une caisse inutilisable annule tout. | `shcrates.admin.reload` |
+| `/shcrates import` | `/shcr` | Mode réseau : copie les clés virtuelles de `playerdata/` dans la base. | `shcrates.admin.import` |
+
+Les sous-commandes d'administration marchent depuis la console ; `setblock` et `removeblock` ont besoin du bloc visé par un joueur.
 
 ## Permissions
 
 | Permission | Description | Par défaut |
 |---|---|---|
-| `shcrates.*` | Donne accès à toutes les fonctionnalités de SHCrates. | `op` |
-| `shcrates.admin` | Permet d'utiliser les commandes d'administration (reload, setblock, removeblock, givekey). | `op` |
-| `shcrates.command.base` | Permet d'utiliser les commandes de base de SHCrates (list, preview, open, openall, keys). | `true` |
+| `shcrates.*` | Tous les droits (parent de `shcrates.admin` et `shcrates.use`). | `op` |
+| `shcrates.use` | Utiliser `/crate` et les sous-commandes joueur. | `true` |
+| `shcrates.list` | `/crate list`. | `op` |
+| `shcrates.keys` | `/crate keys`. | `op` |
+| `shcrates.open.<caisse>` / `shcrates.open.*` | Ouvrir une caisse (`shcrates.open.ordinaire`). | `op` |
+| `shcrates.preview.<caisse>` / `shcrates.preview.*` | Aperçu d'une caisse. | `op` |
+| `shcrates.reroll.<caisse>` / `shcrates.reroll.*` | Relancer une récompense. | `op` |
+| `shcrates.removeblock.<caisse>` | Casser le bloc d'une caisse. | `op` |
+| `shcrates.bypass.creative` | Ouvrir une caisse en mode créatif (ne se déduit pas de `shcrates.admin`). | `op` |
+| `shcrates.admin` | Toute l'administration, aperçu et ouverture de toutes les caisses (parent des nœuds suivants). | `op` |
+| `shcrates.admin.givekey` `.takekey` `.giveall` `.setblock` `.removeblock` `.reload` `.import` `.info` | Une sous-commande chacun. | `op` |
+| `shcrates.admin.previewothers` `.openothers` `.keysothers` | Viser un autre joueur avec `preview`, `open` ou `keys`. | `op` |
 
 ## Configuration
 

@@ -102,7 +102,7 @@ public class PlayerInteractListener implements Listener {
                 return;
             }
 
-            if (player.getGameMode() == GameMode.CREATIVE && !player.hasPermission("shcrates.admin.creativebypass")) {
+            if (player.getGameMode() == GameMode.CREATIVE && !player.hasPermission("shcrates.bypass.creative")) {
                 messageManager.sendMessage(player, "cannot_open_creative");
                 return;
             }
