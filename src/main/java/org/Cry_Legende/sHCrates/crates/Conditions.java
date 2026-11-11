@@ -10,7 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Condition d'une récompense ({@code Condition:} dans crates/), par exemple {@code "%superior_island_level% < 5000"}.
+ * Condition d'une récompense ({@code Condition:} dans crates/), par exemple {@code "%superior_island_level% < 5000"},
+ * ou nom d'une condition de la section {@code conditions} de config.yml.
  * Les deux côtés passent par PlaceholderAPI puis sont comparés comme des nombres ; si l'un des deux n'est pas un
  * nombre, seuls == et != comparent le texte. Une condition illisible laisse le lot gagnable et n'est signalée
  * qu'une fois en console.
@@ -24,6 +25,11 @@ public final class Conditions {
     }
 
     public static boolean test(Player player, String condition) {
+        // « Condition: <nom> » renvoie à la section conditions de config.yml
+        String named = SHCrates.getInstance().getConfigManager().getNamedCondition(condition);
+        if (named != null) {
+            condition = named;
+        }
         Matcher m = FORMAT.matcher(condition.trim());
         if (!m.matches()) {
             warn(condition, "format attendu : <valeur> <opérateur> <valeur>");

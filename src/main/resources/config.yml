@@ -71,9 +71,9 @@
 #   Palier: rare                    Palier de rareté (section 'paliers' ci-dessous) : ligne « Rareté » dans l'aperçu,
 #                                   son, feu d'artifice, titre et annonce. Sans palier : son SoundWin de la caisse et
 #                                   FireworkOnWin, comme avant.
-#   Condition: "%superior_island_level% < 5000"
-#                                   Lot gagnable (et visible) seulement si la condition est vraie. Les deux côtés passent
-#                                   par PlaceholderAPI ; opérateurs < <= > >= == !=.
+#   Condition: solde-legendaire     Lot gagnable (et visible) seulement si la condition est vraie : nom d'une condition de
+#                                   la section 'conditions' ci-dessous, ou expression écrite sur le lot
+#                                   ("%superior_island_level% < 5000"). Opérateurs < <= > >= == !=.
 # Les commandes des récompenses passent aussi par PlaceholderAPI (montants qui suivent le joueur).
 # ======================================================================== #
 
@@ -153,6 +153,19 @@ ouverture_multiple:
   max: 200
   # Clés ouvertes par tick : plus haut, l'ouverture est plus rapide mais pèse davantage sur un seul tick
   par_tick: 20
+
+# Conditions nommées : une récompense peut écrire « Condition: <nom> » au lieu de l'expression, la valeur se change
+# alors ici pour tous les lots qui l'utilisent. Les deux côtés passent par PlaceholderAPI ; opérateurs < <= > >= == !=.
+conditions:
+  # Lots de SHCoins de la Box Légendaire (sacs, 10 Spawners Mystère Commun) : joueurs sous ce solde seulement
+  solde-legendaire: "%vault_eco_balance% < 25000000"
+  # Lots de SHCoins de la Box Rare : joueurs sous ce solde seulement
+  solde-rare: "%vault_eco_balance% < 5000000"
+  # Lots de SHCoins de la Box Ordinaire : joueurs sous ce solde seulement
+  solde-ordinaire: "%vault_eco_balance% < 2000000"
+
+# Nombre de segments de la barre %shcrates_jauge_barre_<caisse>%
+jauge_barre_segments: 20
 
 # Son joué quand un joueur reçoit des clés d'une caisse qui a « AnnonceReception: true »
 son_cle_recue: ENTITY_EXPERIENCE_ORB_PICKUP

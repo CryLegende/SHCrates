@@ -48,6 +48,9 @@ public class ConfigManager {
     private int openAllMax;
     private int openAllPerTick;
     private String keyReceivedSound;
+    private int gaugeBarSegments;
+    // Conditions nommées (section conditions) : nom -> expression
+    private Map<String, String> namedConditions = Collections.emptyMap();
 
     // Paliers de rareté, par identifiant, dans l'ordre du fichier
     private Map<String, Tier> tiers = Collections.emptyMap();
@@ -117,6 +120,15 @@ public class ConfigManager {
         openAllMax = Math.max(1, config.getInt("ouverture_multiple.max", 200));
         openAllPerTick = Math.max(1, config.getInt("ouverture_multiple.par_tick", 20));
         keyReceivedSound = config.getString("son_cle_recue", "ENTITY_EXPERIENCE_ORB_PICKUP");
+        gaugeBarSegments = Math.max(1, config.getInt("jauge_barre_segments", 20));
+        Map<String, String> named = new LinkedHashMap<>();
+        ConfigurationSection conditionsSection = config.getConfigurationSection("conditions");
+        if (conditionsSection != null) {
+            for (String name : conditionsSection.getKeys(false)) {
+                named.put(name.toLowerCase(Locale.ROOT), conditionsSection.getString(name, ""));
+            }
+        }
+        namedConditions = named;
         tiers = loadTiers(config.getConfigurationSection("paliers"));
 
         // Load Reroll Settings
@@ -206,6 +218,16 @@ public class ConfigManager {
     /** Nombre maximal de clés ouvertes par une ouverture multiple. */
     public int getOpenAllMax() {
         return openAllMax;
+    }
+
+    /** Expression d'une condition nommée (section conditions), ou null si ce nom n'existe pas. */
+    public String getNamedCondition(String name) {
+        return name == null ? null : namedConditions.get(name.trim().toLowerCase(Locale.ROOT));
+    }
+
+    /** Nombre de segments de %shcrates_jauge_barre_<caisse>%. */
+    public int getGaugeBarSegments() {
+        return gaugeBarSegments;
     }
 
     /** Son joué à la réception de clés d'une caisse qui a AnnonceReception. */

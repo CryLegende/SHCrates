@@ -152,7 +152,7 @@ public class SHCratesExpansion extends PlaceholderExpansion {
                     return gauge == null ? "" : String.valueOf(Math.max(1, gauge.threshold() - current));
                 case "jauge_barre_": {
                     if (gauge == null) return "";
-                    int segments = 20;
+                    int segments = plugin.getConfigManager().getGaugeBarSegments();
                     int filled = (int) Math.round((double) Math.min(current, gauge.threshold()) / gauge.threshold() * segments);
                     MessageManager mm = plugin.getMessageManager();
                     return mm.getRawMessage("placeholder_gauge_filled").repeat(filled)
