@@ -11,8 +11,8 @@
 # Pour les messages, voir 'messages.yml'.
 #
 # Avec SHNetwork (plusieurs serveurs de jeu), les clés virtuelles sont dans une base partagée (section 'reseau'
-# en bas du fichier). Les blocs de caisse (locations.yml) restent propres à chaque serveur : ceux de Opale vivent
-# dans les mondes 'spawn' et 'Easter', qui n'existent que sur le serveur du spawn, donc les caisses physiques
+# en bas du fichier). Les blocs de caisse (locations.yml) restent propres à chaque serveur : ils vivent dans les
+# mondes du serveur où ils ont été posés, qui n'existent pas forcément sur les autres, donc les caisses physiques
 # ne se trouvent que là. Les clés physiques sont des objets et suivent le joueur.
 #
 # Commandes : /crate (joueurs) et /shcrates (administration, alias /shcr). Chacune accepte toutes les sous-commandes,
@@ -157,12 +157,12 @@ ouverture_multiple:
 # Conditions nommées : une récompense peut écrire « Condition: <nom> » au lieu de l'expression, la valeur se change
 # alors ici pour tous les lots qui l'utilisent. Les deux côtés passent par PlaceholderAPI ; opérateurs < <= > >= == !=.
 conditions:
-  # Lots de SHCoins de la Box Légendaire (sacs, 10 Spawners Mystère Commun) : joueurs sous ce solde seulement
-  solde-legendaire: "%vault_eco_balance% < 25000000"
-  # Lots de SHCoins de la Box Rare : joueurs sous ce solde seulement
-  solde-rare: "%vault_eco_balance% < 5000000"
-  # Lots de SHCoins de la Box Ordinaire : joueurs sous ce solde seulement
-  solde-ordinaire: "%vault_eco_balance% < 2000000"
+  # Lots d'argent de la caisse Légendaire : joueurs sous ce solde seulement
+  solde-legendaire: "%vault_eco_balance% < 10000000"
+  # Lots d'argent de la caisse Rare : joueurs sous ce solde seulement
+  solde-rare: "%vault_eco_balance% < 1000000"
+  # Lots d'argent de la caisse Ordinaire : joueurs sous ce solde seulement
+  solde-ordinaire: "%vault_eco_balance% < 100000"
 
 # Nombre de segments de la barre %shcrates_jauge_barre_<caisse>%
 jauge_barre_segments: 20
@@ -263,8 +263,8 @@ reseau:
   # le joueur avant de lire ses clés
   attente-max-secondes: 10
   base-de-donnees:
-    url: "jdbc:mariadb://127.0.0.1:3306/bo_net"
-    utilisateur: shcrates
+    url: "jdbc:mariadb://127.0.0.1:3306/minecraft"
+    utilisateur: minecraft
     mot-de-passe: CHANGE_ME
     # Délai maximal de connexion et de réponse de la base, en millisecondes. Une base qui ne répond pas
     # empêche d'ouvrir une caisse avec une clé virtuelle tant qu'elle ne répond pas, sans rien faire perdre.
