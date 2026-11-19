@@ -33,6 +33,8 @@
 #   /shcrates reload                                                 Relit config.yml, messages.yml, crates/ et locations.yml. Un
 #                                                                    fichier illisible ou une caisse inutilisable annule tout.
 #   /shcrates import                                                 Avec SHNetwork : copie les clés virtuelles de playerdata/ dans la base.
+#   /shcrates scene add [échelle] | remove | list                    Emplacements des scènes d'ouverture (scenes.yml), à la position du joueur.
+#   /shcrates scene test <caisse> [lot]                              Joue la scène d'une caisse sans clé et sans rien donner.
 #
 # Permissions :
 #   shcrates.use                    Utiliser /crate et les sous-commandes joueur (par défaut : tous les joueurs).
@@ -47,7 +49,7 @@
 #   shcrates.admin                  Toutes les commandes d'administration, et l'aperçu et l'ouverture de toutes les caisses
 #                                   (par défaut : op).
 #   shcrates.admin.<commande>       Une commande d'administration : givekey, takekey, giveall, setblock, removeblock,
-#                                   reload, import, info.
+#                                   reload, import, info, scene.
 #   shcrates.admin.previewothers    Ouvrir l'aperçu d'un autre joueur.
 #   shcrates.admin.openothers       Ouvrir une caisse pour un autre joueur.
 #   shcrates.admin.keysothers       Voir les clés d'un autre joueur.

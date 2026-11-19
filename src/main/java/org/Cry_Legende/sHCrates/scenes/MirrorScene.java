@@ -93,7 +93,7 @@ final class MirrorScene extends Scene {
     MirrorScene(SceneManager manager, Player owner, Crate crate, Reward reward, Placement place, boolean test, SceneListener listener) {
         super(manager, owner, crate, reward, place, SceneKind.MIROIR, test, listener);
         // le défilé se termine sur le lot gagné, au centre
-        totalSwaps = 12;
+        totalSwaps = 10;
         sequence.addAll(showcase(totalSwaps + 2));
         ItemStack won = reward.getDisplayItemStack().clone();
         won.setAmount(1);
@@ -113,7 +113,7 @@ final class MirrorScene extends Scene {
         int interval = swapInterval;
         for (int i = 0; i < totalSwaps; i++) {
             last += interval;
-            interval = (int) Math.min(10, Math.round(interval * 1.15 + 0.4));
+            interval = (int) Math.min(8, Math.round(interval * 1.15 + 0.4));
         }
         climbAt = last + 6;
         int steps = Math.max(1, ladder.size());
@@ -353,7 +353,7 @@ final class MirrorScene extends Scene {
         reel[2] = incoming;
         swaps++;
         sound("miroir-cran", "block.note_block.bell", 0.55f, (float) Math.min(2.0, 0.75 + swaps * 0.06), 0f);
-        swapInterval = (int) Math.min(10, Math.round(swapInterval * 1.15 + 0.4));
+        swapInterval = (int) Math.min(8, Math.round(swapInterval * 1.15 + 0.4));
         nextSwap = t + swapInterval;
     }
 
