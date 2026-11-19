@@ -30,8 +30,8 @@ public record SceneSettings(int visibleRadius, int maxPerSpectator, boolean skip
                             List<String> avoidPlugins, Map<String, String> sounds) {
 
     public static SceneSettings defaults() {
-        return new SceneSettings(24, 2, true, 20, Set.of("spawn"), 24, true, true,
-            List.of("FancyHolograms", "DecentHolograms", "FancyNpcs"), Collections.emptyMap());
+        return new SceneSettings(24, 2, true, 20, Set.of(), 24, true, true,
+            List.of("FancyHolograms", "DecentHolograms", "FancyNpcs", "BlockDisplayCreator"), Collections.emptyMap());
     }
 
     public static SceneSettings load(ConfigurationSection section, Logger logger) {

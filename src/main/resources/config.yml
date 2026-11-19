@@ -249,19 +249,19 @@ scenes:
   distance-abandon: 20
   # Mondes où une scène ne se joue que sur un emplacement posé avec /shcrates scene add : leur décor est souvent envoyé
   # par paquets (modèles, hologrammes), invisible pour le serveur, seul un humain sait où une scène se voit bien.
-  mondes-emplacements:
-    - spawn
+  mondes-emplacements: []
   # Distance maximale entre le joueur et un emplacement
   rayon-emplacements: 24
   # Tourner la caméra du joueur vers l'emplacement quand il ne le regarde pas
   tourner-camera: true
   # Joueurs Bedrock : animation de repli (Geyser n'affiche pas ces entités)
   repli-bedrock: true
-  # Hologrammes et PNJ envoyés par paquets dont les scènes s'écartent (seulement les plugins installés)
+  # Hologrammes, PNJ et décors envoyés par paquets dont les scènes s'écartent (seulement les plugins installés)
   eviter-plugins:
     - FancyHolograms
     - DecentHolograms
     - FancyNpcs
+    - BlockDisplayCreator
   # Sons des scènes (ancien nom ou clé, "" : aucun). Chacun répond à ce qui se voit au même moment.
   sons:
     coffre-chute: entity.phantom.swoop

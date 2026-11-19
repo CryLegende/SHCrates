@@ -15,9 +15,11 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Hologrammes et PNJ envoyés par paquets (sans entité côté serveur), que la recherche de place ne voit pas autrement.
- * Lus à la demande, au moment d'une ouverture, par l'API publique de chaque plugin, appelée par réflexion : SHCrates ne
- * dépend d'aucun d'eux. Un plugin absent est ignoré ; une API qui a changé est signalée une fois puis ignorée.
+ * Hologrammes, PNJ et décors envoyés par paquets (sans entité côté serveur), que la recherche de place ne voit pas autrement.
+ * Lus à la demande, au moment d'une ouverture : par l'API publique de chaque plugin, appelée par réflexion (SHCrates ne
+ * dépend d'aucun d'eux), ou, pour les décors de BlockDisplayCreator, par les ancres qu'il range dans les données des chunks
+ * (clés blockdisplaycreator:x&lt;x&gt;y&lt;y&gt;z&lt;z&gt;, x et z dans le chunk). Un plugin absent est ignoré ; une API qui a
+ * changé est signalée une fois puis ignorée.
  */
 final class Obstacles {
 
@@ -41,6 +43,10 @@ final class Obstacles {
             Plugin plugin = Bukkit.getPluginManager().getPlugin(name);
             if (plugin == null || !plugin.isEnabled()) continue;
             try {
+                if (name.equalsIgnoreCase("BlockDisplayCreator")) {
+                    found.addAll(decorAnchors(world, around, range));
+                    continue;
+                }
                 for (Location loc : locations(name, plugin)) {
                     if (loc == null || loc.getWorld() == null || !loc.getWorld().equals(world)) continue;
                     if (loc.distanceSquared(around) > r2) continue;
@@ -53,6 +59,40 @@ final class Obstacles {
             }
         }
         return found;
+    }
+
+    private static final java.util.regex.Pattern BDC_ANCHOR = java.util.regex.Pattern.compile("x(\\d+)y(-?\\d+)z(\\d+)");
+
+    /**
+     * Décors de BlockDisplayCreator des chunks chargés à moins de {@code range} blocs : une ancre par décor, gardée par le
+     * plugin dans les données du chunk. Le modèle déborde souvent de son bloc : un cylindre large autour de l'ancre.
+     */
+    private static List<Obstacle> decorAnchors(World world, Location around, double range) {
+        List<Obstacle> out = new ArrayList<>();
+        int minX = (int) Math.floor((around.getX() - range) / 16.0);
+        int maxX = (int) Math.floor((around.getX() + range) / 16.0);
+        int minZ = (int) Math.floor((around.getZ() - range) / 16.0);
+        int maxZ = (int) Math.floor((around.getZ() + range) / 16.0);
+        double r2 = range * range;
+        for (int cx = minX; cx <= maxX; cx++) {
+            for (int cz = minZ; cz <= maxZ; cz++) {
+                if (!world.isChunkLoaded(cx, cz)) continue;
+                for (org.bukkit.NamespacedKey key : world.getChunkAt(cx, cz).getPersistentDataContainer().getKeys()) {
+                    if (!key.getNamespace().equals("blockdisplaycreator")) continue;
+                    java.util.regex.Matcher m = BDC_ANCHOR.matcher(key.getKey());
+                    if (!m.matches()) continue;
+                    double x = cx * 16 + Integer.parseInt(m.group(1)) + 0.5;
+                    double y = Integer.parseInt(m.group(2));
+                    double z = cz * 16 + Integer.parseInt(m.group(3)) + 0.5;
+                    double dx = x - around.getX();
+                    double dy = y - around.getY();
+                    double dz = z - around.getZ();
+                    if (dx * dx + dy * dy + dz * dz > r2) continue;
+                    out.add(new Obstacle(x, y, z, 1.4, 0.5, 3.0));
+                }
+            }
+        }
+        return out;
     }
 
     private static Obstacle obstacleFor(String plugin, Location loc) {
