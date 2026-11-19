@@ -107,6 +107,21 @@ Animation:
     ItemHeightOffset: 2.2
     # Hauteur du texte par rapport à l'item (0.5 = un demi-bloc au-dessus de l'item).
     HologramHeightOffset: 0.5 
+    # Ticks entre l'ouverture et l'apparition du lot, le temps qu'un coffre animé ouvre son couvercle.   Par déf 0
+    # DelaiApparition: 8
+    # Hauteur d'où le lot monte jusqu'à ItemHeightOffset, et en combien de ticks : il sort du coffre.   Par déf aucune montée
+    # HauteurDepart: 0.5
+    # DureeMontee: 12
+
+# Ouverture sur le bloc de la caisse (clé utilisée sur le bloc ; rien pour /crate open ni le menu /box).
+# Bloc:
+#   # Commandes lancées par la console à l'ouverture, avant l'animation : %player% le joueur, %world% %x% %y% %z% le bloc,
+#   # %crate% la caisse, puis les placeholders PlaceholderAPI. Une seule fois pour une ouverture multiple.
+#   Commandes:
+#     - "bdc animation play %player% ouverture %x% %y% %z% %world%"
+#   # Ticks entre le clic et le début de l'animation de la caisse (menu de la roulette...), le temps de voir le bloc
+#   # s'animer. Le joueur est « en ouverture » pendant ce temps et reçoit son lot s'il se déconnecte.   Par déf 0
+#   DelaiMenu: 40
 
 # Liste des récompenses.
 

@@ -230,6 +230,11 @@ public class CrateManager {
             }
             crate.setRotation(ids, start);
         }
+
+        ConfigurationSection blockSection = config.getConfigurationSection("Bloc");
+        if (blockSection != null) {
+            crate.setBlockOpening(blockSection.getStringList("Commandes"), blockSection.getInt("DelaiMenu", 0));
+        }
     }
 
     private CrateKey parseCrateKey(ConfigurationSection keySection, String crateId) {
@@ -347,7 +352,10 @@ public class CrateManager {
             quickCrateSection.getInt("DurationSeconds", 3),
             quickCrateSection.getBoolean("DisplayHologram", true),
             quickCrateSection.getDouble("ItemHeightOffset", 1.0),
-            quickCrateSection.getDouble("HologramHeightOffset", 0.5)
+            quickCrateSection.getDouble("HologramHeightOffset", 0.5),
+            quickCrateSection.getInt("DelaiApparition", 0),
+            quickCrateSection.contains("HauteurDepart") ? quickCrateSection.getDouble("HauteurDepart") : Double.NaN,
+            quickCrateSection.getInt("DureeMontee", 0)
         );
         return new AnimationConfig(type, guiTitle, spinDuration, soundOpen, soundSpin, soundWin, rerollButtonSlot, quickConfig);
     }

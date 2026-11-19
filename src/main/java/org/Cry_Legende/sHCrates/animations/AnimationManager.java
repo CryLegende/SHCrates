@@ -173,12 +173,43 @@ public class AnimationManager {
         Animation animation = getAnimation(animationTypeName).orElseGet(() -> getAnimation(configManager.getDefaultAnimationType()).orElse(getAnimation("NONE").get()));
         ActiveAnimationInfo animationInfo = new ActiveAnimationInfo(animation, crate, chosenReward, crateLocation);
         animationInfo.setGuarantee(draw.guarantee());
-        boolean isInstantAnimation = !animation.usesGUI();
 
         if (usedPhysicalKey)
             messageManager.sendMessage(player, "key_used_physical", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
         if (usedVirtualKey)
             messageManager.sendMessage(player, "key_used_virtual", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
+
+        // Ouverture sur le bloc : ses commandes (animation du coffre par exemple), puis le délai avant l'animation
+        runBlockCommands(player, crate, crateLocation);
+        int delay = crateLocation == null ? 0 : crate.getMenuDelayTicks();
+        if (delay <= 0) {
+            beginAnimation(player, crate, crateLocation, draw, animation, animationInfo);
+            return;
+        }
+        // Pendant le délai le joueur est « en ouverture » : pas de seconde ouverture, et son lot lui est donné
+        // s'il se déconnecte (stopAnimationForPlayer) ou si le plugin s'arrête (finishAllAnimations).
+        UUID uuid = player.getUniqueId();
+        activeAnimations.put(uuid, animationInfo);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (activeAnimations.get(uuid) != animationInfo) {
+                return; // ouverture déjà soldée entre-temps
+            }
+            if (!player.isOnline()) {
+                stopAnimationForPlayer(player, true);
+                return;
+            }
+            activeAnimations.remove(uuid, animationInfo);
+            beginAnimation(player, crate, crateLocation, draw, animation, animationInfo);
+        }, delay);
+    }
+
+    /**
+     * Lance l'animation d'une ouverture : lot donné tout de suite pour une animation sans menu, sinon ouverture suivie
+     * jusqu'à la fin du menu.
+     */
+    private void beginAnimation(Player player, Crate crate, Location crateLocation, Draw draw, Animation animation, ActiveAnimationInfo animationInfo) {
+        Reward chosenReward = draw.reward();
+        boolean isInstantAnimation = !animation.usesGUI();
         if (isInstantAnimation) {
             // Récompense donnée tout de suite : l'ouverture n'a pas besoin d'être suivie. L'enregistrer
             // bloquait le joueur (« déjà en train d'ouvrir ») quand un autre joueur relançait la même
@@ -218,6 +249,36 @@ public class AnimationManager {
             && !guiManager.isAnimationInventory(player.getOpenInventory().getTopInventory())) {
             plugin.getLogger().warning("Animation GUI for " + player.getName() + " did not open, reward given directly.");
             stopAnimationForPlayer(player, true);
+        }
+    }
+
+    /**
+     * Commandes {@code Bloc.Commandes} d'une caisse ouverte sur son bloc, lancées par la console : %player% (ou
+     * %player_name%) est le joueur, %world% %x% %y% %z% le bloc, %crate% l'identifiant de la caisse, puis les
+     * placeholders PlaceholderAPI du joueur. Rien pour une ouverture sans bloc (/crate open, menu /box).
+     */
+    private void runBlockCommands(Player player, Crate crate, Location crateLocation) {
+        if (crateLocation == null || crateLocation.getWorld() == null || crate.getBlockCommands().isEmpty()) {
+            return;
+        }
+        for (String command : crate.getBlockCommands()) {
+            String line = command
+                .replace("%player_name%", player.getName())
+                .replace("%player%", player.getName())
+                .replace("%world%", crateLocation.getWorld().getName())
+                .replace("%x%", String.valueOf(crateLocation.getBlockX()))
+                .replace("%y%", String.valueOf(crateLocation.getBlockY()))
+                .replace("%z%", String.valueOf(crateLocation.getBlockZ()))
+                .replace("%crate%", crate.getId());
+            line = Papi.apply(player, line);
+            if (line.startsWith("/")) {
+                line = line.substring(1);
+            }
+            try {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), line);
+            } catch (RuntimeException e) {
+                plugin.getLogger().log(Level.WARNING, "Crate " + crate.getId() + ": block command failed: " + line, e);
+            }
         }
     }
 
@@ -472,6 +533,8 @@ public class AnimationManager {
         int toOpen = Math.min(available, configManager.getOpenAllMax());
         int perTick = configManager.getOpenAllPerTick();
         bulkOpening.add(uuid);
+        // une seule fois pour toute l'ouverture multiple, sans délai
+        runBlockCommands(player, crate, crateLocation);
         messageManager.sendRawMessage(player, "openall_starting", MessageManager.ph(
             "%amount%", String.valueOf(toOpen), "%crate_display_name%", crate.getDisplayName()));
 

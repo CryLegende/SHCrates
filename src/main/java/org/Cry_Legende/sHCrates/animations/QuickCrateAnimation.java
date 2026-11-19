@@ -77,70 +77,35 @@ public class QuickCrateAnimation implements Animation {
 
         playSound(player, crateLocation, crate.getAnimationConfig().getSoundOpen());
 
-        Location spawnAnchor = crateLocation.clone().add(0.5, 0.0, 0.5);
-        ItemStack displayItem = chosenReward.getDisplayItemStack().clone();
-
-        ItemDisplay itemDisplay = crateLocation.getWorld().spawn(spawnAnchor, ItemDisplay.class, id -> {
-            id.setItemStack(displayItem);
-            id.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GROUND);
-            id.setBillboard(Display.Billboard.FIXED);
-
-            Transformation transform = new Transformation(
-                new Vector3f(0, (float) quickConfig.getItemHeightOffset(), 0),
-                new Quaternionf(),
-                new Vector3f(1.0f, 1.0f, 1.0f),
-                new Quaternionf()
-            );
-            id.setTransformation(transform);
-        });
-        plugin.getAnimationManager().addDisplayEntity(blockKeyLocation, itemDisplay);
-
-        TextDisplay nameDisplay = null;
-        if (quickConfig.isDisplayHologram()) {
-            nameDisplay = crateLocation.getWorld().spawn(spawnAnchor, TextDisplay.class, td -> {
-                td.setText(chosenReward.getDisplayName());
-                td.setBillboard(Display.Billboard.VERTICAL);
-                td.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
-                td.setShadowed(true);
-
-                Transformation transform = new Transformation(
-                    new Vector3f(0, (float) (quickConfig.getItemHeightOffset() + quickConfig.getHologramHeightOffset()), 0),
-                    new Quaternionf(),
-                    new Vector3f(1.0f, 1.0f, 1.0f),
-                    new Quaternionf()
-                );
-                td.setTransformation(transform);
-            });
-            plugin.getAnimationManager().addDisplayEntity(blockKeyLocation, nameDisplay);
-        }
-        final TextDisplay finalNameDisplay = nameDisplay;
+        final Location spawnAnchor = crateLocation.clone().add(0.5, 0.0, 0.5);
+        final ItemStack displayItem = chosenReward.getDisplayItemStack().clone();
+        // Le lot apparaît après DelaiApparition ticks (le couvercle d'un coffre animé qui s'ouvre) et peut monter
+        // depuis HauteurDepart jusqu'à sa hauteur en DureeMontee ticks ; son nom s'affiche une fois arrivé.
+        final int appearAt = quickConfig.getAppearDelayTicks();
+        final int riseTicks = quickConfig.rises() ? quickConfig.getRiseTicks() : 0;
+        final double toY = quickConfig.getItemHeightOffset();
+        final double fromY = quickConfig.rises() ? quickConfig.getRiseFromHeight() : toY;
+        final long durationTicks = quickConfig.getDurationSeconds() * 20L;
 
         BukkitRunnable animationRunnable = new BukkitRunnable() {
-            private final long startTime = System.currentTimeMillis();
-            private final long durationMillis = quickConfig.getDurationSeconds() * 1000L;
+            private int tick = 0;
+            private ItemDisplay itemDisplay;
+            private TextDisplay nameDisplay;
             private double currentYaw = 0;
 
             @Override
             public void run() {
                 BukkitTask currentTask = activeAnimationTasks.get(blockKeyLocation);
-                // --- CORRECTION 1 : GESTION DE LA CONCURRENCE ---
-                // Si cette tâche n'est plus la tâche active pour cet emplacement (parce qu'une autre
-                // animation a commencé), elle est obsolète. Elle doit nettoyer SES PROPRES entités
-                // avant de s'arrêter pour ne pas les laisser derrière.
+                // Une autre ouverture a pris ce bloc : cette tâche est obsolète, elle retire SES entités et s'arrête.
                 if (currentTask == null || currentTask.getTaskId() != this.getTaskId()) {
-                    if (itemDisplay != null && itemDisplay.isValid()) {
-                        itemDisplay.remove();
-                    }
-                    if (finalNameDisplay != null && finalNameDisplay.isValid()) {
-                        finalNameDisplay.remove();
-                    }
+                    removeOwn();
                     this.cancel();
                     return;
                 }
 
-                long elapsed = System.currentTimeMillis() - startTime;
-                boolean shouldEnd = elapsed >= durationMillis || !player.isOnline() || !itemDisplay.isValid() || (finalNameDisplay != null && !finalNameDisplay.isValid());
-
+                int shownFor = tick - appearAt;
+                boolean shouldEnd = !player.isOnline() || shownFor >= durationTicks
+                    || itemDisplay != null && !itemDisplay.isValid() || nameDisplay != null && !nameDisplay.isValid();
                 if (shouldEnd) {
                     plugin.getAnimationManager().clearDisplayEntities(blockKeyLocation);
                     activeAnimationTasks.remove(blockKeyLocation);
@@ -154,21 +119,63 @@ public class QuickCrateAnimation implements Animation {
                     return;
                 }
 
-                currentYaw += 5;
-                if (currentYaw >= 360) currentYaw -= 360;
+                if (shownFor == 0) {
+                    itemDisplay = crateLocation.getWorld().spawn(spawnAnchor, ItemDisplay.class, id -> {
+                        id.setItemStack(displayItem);
+                        id.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GROUND);
+                        id.setBillboard(Display.Billboard.FIXED);
+                        id.setPersistent(false);
+                        // le client glisse d'une pose à la suivante : rotation et montée sans à-coups
+                        id.setInterpolationDuration(1);
+                        id.setTransformation(pose(fromY, 0));
+                    });
+                    plugin.getAnimationManager().addDisplayEntity(blockKeyLocation, itemDisplay);
+                }
+                if (shownFor == riseTicks && quickConfig.isDisplayHologram()) {
+                    nameDisplay = crateLocation.getWorld().spawn(spawnAnchor, TextDisplay.class, td -> {
+                        td.setText(chosenReward.getDisplayName());
+                        td.setBillboard(Display.Billboard.VERTICAL);
+                        td.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+                        td.setShadowed(true);
+                        td.setPersistent(false);
+                        td.setTransformation(new Transformation(
+                            new Vector3f(0, (float) (toY + quickConfig.getHologramHeightOffset()), 0),
+                            new Quaternionf(), new Vector3f(1.0f, 1.0f, 1.0f), new Quaternionf()));
+                    });
+                    plugin.getAnimationManager().addDisplayEntity(blockKeyLocation, nameDisplay);
+                }
+                if (shownFor > 0 && itemDisplay != null) {
+                    currentYaw += 5;
+                    if (currentYaw >= 360) currentYaw -= 360;
+                    double y = toY;
+                    if (shownFor < riseTicks) {
+                        double t = shownFor / (double) riseTicks;
+                        y = fromY + (toY - fromY) * (1 - (1 - t) * (1 - t)); // ralentit en arrivant
+                    }
+                    itemDisplay.setTransformation(pose(y, currentYaw));
+                    itemDisplay.setInterpolationDelay(0);
+                }
+                tick++;
+            }
 
-                Transformation currentTransform = itemDisplay.getTransformation();
-                Quaternionf newRotation = new Quaternionf().rotateY((float) Math.toRadians(currentYaw));
-
-                itemDisplay.setTransformation(new Transformation(
-                    currentTransform.getTranslation(),
-                    newRotation,
-                    currentTransform.getScale(),
-                    currentTransform.getRightRotation()
-                ));
+            private void removeOwn() {
+                if (itemDisplay != null && itemDisplay.isValid()) {
+                    itemDisplay.remove();
+                }
+                if (nameDisplay != null && nameDisplay.isValid()) {
+                    nameDisplay.remove();
+                }
             }
         };
         activeAnimationTasks.put(blockKeyLocation, animationRunnable.runTaskTimer(plugin, 0L, 1L));
+    }
+
+    private static Transformation pose(double y, double yawDegrees) {
+        return new Transformation(
+            new Vector3f(0, (float) y, 0),
+            new Quaternionf().rotateY((float) Math.toRadians(yawDegrees)),
+            new Vector3f(1.0f, 1.0f, 1.0f),
+            new Quaternionf());
     }
 
     @Override

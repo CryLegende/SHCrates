@@ -27,6 +27,7 @@ Utilisé sur : **Opale**.
 - **Lots du mois** (`Rotation:`) : un seul des lots listés est gagnable chaque mois, à tour de rôle.
 - **Conditions** (`Condition:` d'une récompense) : lot gagnable et visible seulement si la comparaison PlaceholderAPI est vraie. Les commandes des récompenses passent aussi par PlaceholderAPI.
 - **Ouverture multiple** : `/crate openall` et Shift+clic droit sur le bloc d'une QuickCrate ouvrent toutes les clés (virtuelles puis physiques), avec un récapitulatif du plus courant au plus rare, un seul son et le dévoilement du meilleur lot. Refusée sur une caisse qui a `OuvertureMultiple: false`. S'arrête quand l'inventaire est plein.
+- **Ouverture sur le bloc** (`Bloc:` d'une caisse) : `Commandes` lancées par la console quand la caisse est ouverte sur son bloc (`%player%`, `%world%`, `%x%`, `%y%`, `%z%`, `%crate%`, PlaceholderAPI), par exemple `bdc animation play %player% ouverture %x% %y% %z% %world%` pour animer un coffre BlockDisplayCreator posé sur le bloc, et `DelaiMenu` ticks d'attente avant l'animation de la caisse pour le voir s'ouvrir. Une QuickCrate peut faire sortir son lot du coffre (`DelaiApparition`, `HauteurDepart`, `DureeMontee`).
 - **Réception de clés** (`AnnonceReception: true`) : message, son et état de la jauge quand le joueur reçoit des clés de la caisse.
 - Une animation en GUI donne le lot dès la fin du défilement quand le joueur ne peut pas le relancer ; avec une relance possible, il est donné à la fermeture, une fois le choix fait.
 

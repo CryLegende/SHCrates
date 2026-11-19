@@ -49,6 +49,10 @@ public class Crate {
     // Lots en rotation : un seul est gagnable chaque mois, à tour de rôle depuis rotationStart
     private List<String> rotation = Collections.emptyList();
     private YearMonth rotationStart = YearMonth.of(2026, 1);
+    // Commandes lancées par la console quand la caisse est ouverte sur son bloc (animation du bloc par exemple)
+    private List<String> blockCommands = Collections.emptyList();
+    // Ticks entre l'ouverture sur le bloc et l'ouverture du menu de l'animation, le temps de voir le bloc s'animer
+    private int menuDelayTicks = 0;
 
     public Crate(String id, String displayName, Material blockType, CrateKey keyConfig,
                  PreviewGUIConfig previewGUIConfig, AnimationConfig animationConfig) {
@@ -65,6 +69,19 @@ public class Crate {
 
     public void addReward(Reward reward) {
         this.rewards.add(reward);
+    }
+
+    public void setBlockOpening(List<String> commands, int menuDelayTicks) {
+        this.blockCommands = commands == null ? Collections.emptyList() : List.copyOf(commands);
+        this.menuDelayTicks = Math.max(0, menuDelayTicks);
+    }
+
+    public List<String> getBlockCommands() {
+        return blockCommands;
+    }
+
+    public int getMenuDelayTicks() {
+        return menuDelayTicks;
     }
 
     public void calculateTotalChanceWeight() {
