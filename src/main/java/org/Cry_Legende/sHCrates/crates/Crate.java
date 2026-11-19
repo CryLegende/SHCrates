@@ -44,6 +44,8 @@ public class Crate {
     private String firstOpenMinTier;
     // Ouverture de toutes les clés d'un coup permise (/crate openall, Shift+clic sur une QuickCrate)
     private boolean openAllAllowed = true;
+    // Relance possible pour cette caisse (Relance: false la retire, même aux joueurs qui ont shcrates.reroll.*)
+    private boolean rerollAllowed = true;
     // Message et son quand le joueur reçoit des clés de cette caisse
     private boolean announceReception = false;
     // Lots en rotation : un seul est gagnable chaque mois, à tour de rôle depuis rotationStart
@@ -238,6 +240,14 @@ public class Crate {
 
     public void setFirstOpenMinTier(String firstOpenMinTier) {
         this.firstOpenMinTier = firstOpenMinTier;
+    }
+
+    public boolean isRerollAllowed() {
+        return rerollAllowed;
+    }
+
+    public void setRerollAllowed(boolean rerollAllowed) {
+        this.rerollAllowed = rerollAllowed;
     }
 
     public boolean isOpenAllAllowed() {

@@ -42,7 +42,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
 
     // /crate : fonctions joueur ; /shcrates : administration. Chaque nom accepte toutes les sous-commandes, sous réserve des droits.
     private static final List<String> PLAYER_SUBCOMMANDS = List.of("preview", "open", "openall", "keys", "stats", "list");
-    private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info", "scene");
+    private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info", "scene", "forceopen");
 
 
     public CrateCommand(SHCrates plugin) {
@@ -132,6 +132,9 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 break;
             case "scene":
                 new SceneCommand(plugin).handle(sender, args);
+                break;
+            case "forceopen":
+                handleForceOpenCommand(sender, args);
                 break;
             default:
                 handleInfoCommand(sender, args);
@@ -371,6 +374,42 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 keyLines.forEach(sender::sendMessage);
             }
         }
+    }
+
+    /**
+     * /shcrates forceopen &lt;joueur&gt; &lt;caisse&gt; [nombre] : ouvre la caisse au joueur sans clé, avec son animation ;
+     * plusieurs ouvertures se jouent l'une après l'autre.
+     */
+    private void handleForceOpenCommand(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            messageManager.sendMessage(sender, "command_usage_forceopen");
+            return;
+        }
+        Player targetPlayer = Bukkit.getPlayerExact(args[1]);
+        if (targetPlayer == null) {
+            messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[1]));
+            return;
+        }
+        Optional<Crate> crateOpt = crateManager.getCrate(args[2]);
+        if (crateOpt.isEmpty()) {
+            messageManager.sendMessage(sender, "crate_not_exist", MessageManager.ph("%crate_name%", args[2]));
+            return;
+        }
+        int amount = 1;
+        if (args.length >= 4) {
+            try {
+                amount = Integer.parseInt(args[3]);
+                if (amount <= 0 || amount > 64) throw new NumberFormatException();
+            } catch (NumberFormatException e) {
+                messageManager.sendMessage(sender, "invalid_amount", MessageManager.ph("%amount%", args[3]));
+                return;
+            }
+        }
+        plugin.getAnimationManager().queueForcedOpenings(targetPlayer, crateOpt.get(), amount);
+        messageManager.sendMessage(sender, "forceopen_queued", MessageManager.ph(
+            "%amount%", String.valueOf(amount),
+            "%crate_name%", crateOpt.get().getDisplayName(),
+            "%target_player%", targetPlayer.getName()));
     }
 
     private void handleGiveKeyCommand(CommandSender sender, String[] args) {
@@ -825,6 +864,15 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                     break;
                 case "scene":
                     suggestions.addAll(SceneCommand.complete(plugin, args));
+                    break;
+                case "forceopen":
+                    if (args.length == 2) { // <joueur>
+                        Bukkit.getOnlinePlayers().stream().map(Player::getName).forEach(suggestions::add);
+                    } else if (args.length == 3) { // <caisse>
+                        crateManager.getAllCrates().stream().map(Crate::getId).forEach(suggestions::add);
+                    } else if (args.length == 4) { // [nombre]
+                        suggestions.addAll(List.of("1", "2", "3"));
+                    }
                     break;
                 case "setblock":
                 case "info":

@@ -27,6 +27,8 @@ Utilisé sur : **Opale**.
 - **Lots du mois** (`Rotation:`) : un seul des lots listés est gagnable chaque mois, à tour de rôle.
 - **Conditions** (`Condition:` d'une récompense) : lot gagnable et visible seulement si la comparaison PlaceholderAPI est vraie. Les commandes des récompenses passent aussi par PlaceholderAPI.
 - **Ouverture multiple** : `/crate openall` et Shift+clic droit sur le bloc d'une QuickCrate ouvrent toutes les clés (virtuelles puis physiques), avec un récapitulatif du plus courant au plus rare, un seul son et le dévoilement du meilleur lot. Refusée sur une caisse qui a `OuvertureMultiple: false`. S'arrête quand l'inventaire est plein.
+- **Ouverture sans clé** : `/shcrates forceopen <joueur> <caisse> [nombre]` ouvre la caisse au joueur avec son animation, sans clé (récompense d'un boss, d'un événement, d'un lot d'enchère...). Plusieurs ouvertures se jouent l'une après l'autre : la suivante commence quand la scène est finie ou que le menu de l'animation est fermé. Si le joueur se déconnecte, les ouvertures en attente lui sont données tout de suite.
+- **Relance par caisse** : `Relance: false` retire la relance d'une caisse, même aux joueurs qui ont `shcrates.reroll.*`.
 - **Ouverture sur le bloc** (`Bloc:` d'une caisse) : `Commandes` lancées par la console quand la caisse est ouverte sur son bloc (`%player%`, `%world%`, `%x%`, `%y%`, `%z%`, `%crate%`, PlaceholderAPI), par exemple `bdc animation play %player% ouverture %x% %y% %z% %world%` pour animer un coffre BlockDisplayCreator posé sur le bloc, et `DelaiMenu` ticks d'attente avant l'animation de la caisse pour le voir s'ouvrir. Une QuickCrate peut faire sortir son lot du coffre (`DelaiApparition`, `HauteurDepart`, `DureeMontee`).
 - **Réception de clés** (`AnnonceReception: true`) : message, son et état de la jauge quand le joueur reçoit des clés de la caisse.
 - Une animation en GUI donne le lot dès la fin du défilement quand le joueur ne peut pas le relancer ; avec une relance possible, il est donné à la fermeture, une fois le choix fait.
@@ -38,7 +40,7 @@ Les compteurs (jauge, clés ouvertes, première clé, meilleur palier) sont rang
 Deux animations se jouent dans le monde, devant le joueur, au lieu d'un menu (`Animation.Type` d'une caisse) :
 
 - **COFFRE_CELESTE** (Box Légendaire, environ 9 s) : un coffre-fort sinistre (vault ominous) tombe du ciel dans une traînée de feu d'âme, ou apparaît sur place sous un plafond. Il s'éveille, six lots de la box tournent autour de lui comme une machine à sous qui ralentit, puis sont aspirés. Son contour monte de palier en palier (couleur de chaque palier) jusqu'à celui du lot, il s'ouvre et éjecte le lot, qui flotte avec son nom et son palier. Le titre du palier s'affiche quand la scène s'efface.
-- **MIROIR** (Box Cosmétique, environ 8 s) : un miroir doré se forme ; dedans, le reflet du joueur (entité Mannequin avec son skin et son pseudo) suit son regard et ses coups de bras. Des cosmétiques défilent au-dessus, le cadre monte de palier en palier, puis le cosmétique gagné entre dans le miroir et le reflet l'essaie (`Essayage` du lot) : titre devant son pseudo, compagnon sur l'épaule, ou particules autour de lui. Le miroir éclate, puis un dialogue propose « Équiper maintenant » (`Equiper` du lot).
+- **MIROIR** (Box Cosmétique, environ 8 s) : un miroir doré se forme ; dedans, le reflet du joueur (entité Mannequin avec son skin et son pseudo) suit son regard et ses coups de bras. Des cosmétiques défilent au-dessus, le cadre monte de palier en palier, puis le cosmétique gagné entre dans le miroir et le reflet l'essaie (`Essayage` du lot) : titre devant son pseudo, compagnon sur l'épaule, ou particules autour de lui. Le miroir éclate. Proposer d'équiper le cosmétique gagné passe par les commandes du lot (un dialogue SHDialogs `shdialogs open nouveau-compagnon …`, par exemple).
 
 Règles communes :
 
@@ -57,8 +59,6 @@ Clés des récompenses pour le Miroir :
       - 'WITCH'
       - 'DUST purple'
       Titre: '&7[&aLucky&2☘&7]' # TITRE : texte affiché devant le pseudo du reflet
-    Equiper:                   # bouton « Équiper maintenant » (console ; « [joueur] » devant : lancée par le joueur)
-    - 'ppo %player_name% group load sorciere'
 ```
 
 Réglages dans la section `scenes` de `config.yml` (visibilité, accroupi, distance d'abandon, mondes à emplacements, plugins d'hologrammes à éviter, sons de chaque moment) et `aveugler-pendant-dialogues`. Les emplacements sont gardés dans `scenes.yml`.
@@ -99,6 +99,7 @@ Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (
 | `/crate stats [joueur]` | `/shcrates stats` | Clés ouvertes, meilleur palier, jauge et collection par caisse. | `shcrates.use` ; autre joueur : `shcrates.admin.statsothers` |
 | `/crate list` | `/shcrates list` | Liste les caisses. | `shcrates.list` |
 | `/shcrates givekey <joueur> <caisse> <nombre> [physical\|virtual]` | `/shcr` | Donne des clés. | `shcrates.admin.givekey` |
+| `/shcrates forceopen <joueur> <caisse> [nombre]` | `/shcr` | Ouvre la caisse au joueur sans clé, avec son animation ; plusieurs ouvertures l'une après l'autre. | `shcrates.admin.forceopen` |
 | `/shcrates takekey <joueur> <caisse> <nombre> [physical\|virtual]` | `/shcr` | Retire des clés. | `shcrates.admin.takekey` |
 | `/shcrates giveall <caisse> <nombre> [physical\|virtual]` | `/shcr` | Donne des clés à tous les joueurs en ligne. | `shcrates.admin.giveall` |
 | `/shcrates setblock <caisse>` | `/shcr` | Définit le bloc visé comme caisse. | `shcrates.admin.setblock` |

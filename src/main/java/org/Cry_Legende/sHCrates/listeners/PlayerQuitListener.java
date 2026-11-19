@@ -30,5 +30,7 @@ public class PlayerQuitListener implements Listener {
         if (animationManager.isPlayerInAnimation(player)) {
             animationManager.stopAnimationForPlayer(player, true);
         }
+        // Ouvertures sans clé (/shcrates forceopen) encore en attente : données tout de suite
+        animationManager.flushForcedOpenings(player);
     }
 }

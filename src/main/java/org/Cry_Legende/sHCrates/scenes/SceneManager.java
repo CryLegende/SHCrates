@@ -156,7 +156,6 @@ public final class SceneManager implements Listener {
     /** Démarre une scène pour ce joueur (celle qu'il avait encore est retirée). */
     public Scene play(Player owner, Crate crate, Reward reward, Placement placement, SceneKind kind, boolean test, SceneListener listener) {
         abort(owner);
-        if (plugin.getRewardDialogs() != null) plugin.getRewardDialogs().dismiss(owner);
         Scene scene = switch (kind) {
             case COFFRE_CELESTE -> new VaultScene(this, owner, crate, reward, placement, test, listener);
             case MIROIR -> new MirrorScene(this, owner, crate, reward, placement, test, listener);

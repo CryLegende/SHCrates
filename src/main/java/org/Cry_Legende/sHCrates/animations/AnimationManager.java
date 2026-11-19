@@ -64,6 +64,9 @@ public class AnimationManager {
     private final Set<UUID> bulkOpening = new HashSet<>();
     // Garantie d'une ouverture QuickCrate, dévoilée à la fin de son hologramme
     private final Map<UUID, Guarantee> pendingQuickGuarantee = new HashMap<>();
+    // Ouvertures sans clé en attente (/shcrates forceopen), jouées l'une après l'autre, par joueur
+    private final Map<UUID, java.util.ArrayDeque<String>> forcedOpenings = new HashMap<>();
+    private org.bukkit.scheduler.BukkitTask forcedTask;
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
     /** Garantie appliquée à un tirage : aucune, première clé du joueur, ou jauge pleine. */
@@ -315,16 +318,12 @@ public class AnimationManager {
         }
     }
 
-    /** Fin d'une scène : dialogue de relance si le lot attend encore, sinon proposition d'équiper le cosmétique. */
+    /** Fin d'une scène : dialogue de relance si le lot attend encore. */
     public void onSceneEnd(Player player, Scene scene) {
         if (!player.isOnline()) return;
         ActiveAnimationInfo info = activeAnimations.get(player.getUniqueId());
         if (info != null && !info.isRewardGiven()) {
             plugin.getRewardDialogs().showReroll(player, info.getChosenReward());
-            return;
-        }
-        if (scene != null) {
-            plugin.getRewardDialogs().showEquip(player, scene.reward(), false);
         }
     }
 
@@ -347,9 +346,6 @@ public class AnimationManager {
         info.setRewardGiven(true);
         activeAnimations.remove(player.getUniqueId(), info);
         giveReward(player, info.getCrate(), info.getChosenReward(), info.getCrateLocation());
-        if (info.getAnimation().isWorld()) {
-            plugin.getRewardDialogs().showEquip(player, info.getChosenReward(), false);
-        }
     }
 
     public void performReroll(Player player) {
@@ -571,7 +567,7 @@ public class AnimationManager {
 
     /** Le joueur peut relancer ce tirage (relance activée et droit sur la caisse). */
     public boolean canReroll(Player player, Crate crate) {
-        return configManager.isRerollEnabled()
+        return configManager.isRerollEnabled() && crate.isRerollAllowed()
             && (player.hasPermission("shcrates.reroll." + crate.getId()) || player.hasPermission("shcrates.reroll.*"));
     }
 
@@ -828,6 +824,71 @@ public class AnimationManager {
         firework.detonate();
     }
 
+    // ------------------------------------------------------------------ ouvertures sans clé
+
+    /**
+     * /shcrates forceopen : ouvre {@code count} fois la caisse au joueur sans clé, avec son animation (récompense d'un boss,
+     * d'un événement...). La première commence tout de suite si le joueur n'ouvre rien, chaque suivante à la fin de la
+     * précédente (scène terminée, menu de l'animation fermé).
+     */
+    public void queueForcedOpenings(Player player, Crate crate, int count) {
+        java.util.ArrayDeque<String> queue = forcedOpenings.computeIfAbsent(player.getUniqueId(), k -> new java.util.ArrayDeque<>());
+        for (int i = 0; i < count; i++) {
+            queue.add(crate.getId());
+        }
+        startNextForcedOpenings();
+        if (!forcedOpenings.isEmpty() && forcedTask == null) {
+            forcedTask = Bukkit.getScheduler().runTaskTimer(plugin, this::startNextForcedOpenings, 10L, 10L);
+        }
+    }
+
+    /** Lance l'ouverture suivante de chaque joueur qui n'a plus rien en cours. */
+    private void startNextForcedOpenings() {
+        for (UUID uuid : new ArrayList<>(forcedOpenings.keySet())) {
+            Player player = Bukkit.getPlayer(uuid);
+            java.util.ArrayDeque<String> queue = forcedOpenings.get(uuid);
+            if (player == null || queue == null) {
+                continue; // déconnexion : soldée par flushForcedOpenings
+            }
+            if (isPlayerInAnimation(player) || isBulkOpening(player)
+                || (plugin.getSceneManager() != null && plugin.getSceneManager().sceneOf(player) != null)
+                || guiManager.isAnimationInventory(player.getOpenInventory().getTopInventory())) {
+                continue;
+            }
+            String crateId = queue.poll();
+            if (queue.isEmpty()) forcedOpenings.remove(uuid);
+            Optional<Crate> crate = crateId == null ? Optional.empty() : crateManager.getCrate(crateId);
+            if (crate.isEmpty()) continue;
+            Draw draw = drawReward(player, crate.get());
+            if (draw == null || draw.reward() == null) {
+                plugin.getLogger().warning("forceopen " + crateId + " pour " + player.getName() + " : aucune récompense possible.");
+                messageManager.sendMessage(player, "error_no_eligible_reward", MessageManager.ph("%crate_display_name%", crate.get().getDisplayName()));
+                continue;
+            }
+            startCrateOpeningLogic(player, crate.get(), null, draw, false, false, crate.get().getAnimationConfig().getType());
+        }
+        if (forcedOpenings.isEmpty() && forcedTask != null) {
+            forcedTask.cancel();
+            forcedTask = null;
+        }
+    }
+
+    /**
+     * Déconnexion ou arrêt du plugin : les ouvertures sans clé encore en attente sont données tout de suite, sans animation.
+     */
+    public void flushForcedOpenings(Player player) {
+        java.util.ArrayDeque<String> queue = forcedOpenings.remove(player.getUniqueId());
+        if (queue == null) return;
+        for (String crateId : queue) {
+            Optional<Crate> crate = crateManager.getCrate(crateId);
+            if (crate.isEmpty()) continue;
+            Draw draw = drawReward(player, crate.get());
+            if (draw != null && draw.reward() != null) {
+                giveReward(player, crate.get(), draw.reward(), null, true);
+            }
+        }
+    }
+
     /**
      * @param giveRewardIfApplicable true pour donner la récompense pas encore donnée, immédiatement
      *                               (utilisé à la déconnexion, où le joueur ne sera plus là au tick suivant).
@@ -847,6 +908,18 @@ public class AnimationManager {
      * Arrêt du plugin : toutes les ouvertures en cours sont soldées, récompense comprise.
      */
     public void finishAllAnimations() {
+        if (forcedTask != null) {
+            forcedTask.cancel();
+            forcedTask = null;
+        }
+        for (UUID uuid : new ArrayList<>(forcedOpenings.keySet())) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                flushForcedOpenings(player);
+            } else {
+                plugin.getLogger().warning("forceopen " + forcedOpenings.remove(uuid) + " NOT given: player " + uuid + " is offline.");
+            }
+        }
         for (UUID uuid : new ArrayList<>(activeAnimations.keySet())) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {

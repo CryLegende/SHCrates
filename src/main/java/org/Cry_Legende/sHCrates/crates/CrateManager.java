@@ -183,6 +183,7 @@ public class CrateManager {
     /** Jauge de garantie, première clé, ouverture multiple et rotation d'une caisse. */
     private void parseProgression(String id, FileConfiguration config, Crate crate) {
         crate.setOpenAllAllowed(config.getBoolean("OuvertureMultiple", true));
+        crate.setRerollAllowed(config.getBoolean("Relance", true));
         crate.setAnnounceReception(config.getBoolean("AnnonceReception", false));
 
         ConfigurationSection gaugeSection = config.getConfigurationSection("Jauge");
@@ -420,7 +421,6 @@ public class CrateManager {
             reward.setCondition(condition);
         }
         reward.setTryOn(parseTryOn(rewardConfig.getConfigurationSection("Essayage"), rewardId, crateDisplayName));
-        reward.setEquipCommands(rewardConfig.getStringList("Equiper"));
         ItemBuilder itemBuilder = new ItemBuilder(reward.getDisplayItemMaterial(), reward.getDisplayAmount())
             .setName(reward.getDisplayName())
             .setLore(reward.getLore());

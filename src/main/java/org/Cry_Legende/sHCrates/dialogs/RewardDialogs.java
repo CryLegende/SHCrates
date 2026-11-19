@@ -15,7 +15,6 @@ import org.Cry_Legende.sHCrates.SHCrates;
 import org.Cry_Legende.sHCrates.config.MessageManager;
 import org.Cry_Legende.sHCrates.crates.Reward;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
-import org.Cry_Legende.sHCrates.utils.Papi;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -33,29 +32,21 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * Dialogues de fin de scène, au style des dialogues SkyHand (titre en première ligne, joueur aveuglé, choix principal en
- * premier) :
- * <ul>
- *   <li>relance : « Garder ce lot » ou « Relancer », pour les joueurs qui ont le droit de relancer ;</li>
- *   <li>cosmétique : « Équiper maintenant » (commandes Equiper du lot) ou « Plus tard ».</li>
- * </ul>
+ * Dialogue de fin de scène, au style des dialogues SkyHand (titre en première ligne, joueur aveuglé, choix principal en
+ * premier) : « Garder ce lot » ou « Relancer », pour les joueurs qui ont le droit de relancer. Proposer d'équiper un
+ * cosmétique gagné passe par les commandes du lot (un dialogue SHDialogs, par exemple), pas par SHCrates.
  */
 public final class RewardDialogs implements Listener {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
     private static final Key KEEP = Key.key("shcrates", "garder");
     private static final Key REROLL = Key.key("shcrates", "relancer");
-    private static final Key EQUIP = Key.key("shcrates", "equiper");
     private static final int BODY_WIDTH = 260;
     /** Sans réponse au dialogue de relance, le lot est gardé au bout de ce délai. */
     private static final long REROLL_TIMEOUT_TICKS = 20L * 30;
 
-    private record Equip(Reward reward, boolean test) {
-    }
-
     private final SHCrates plugin;
     private final DialogBlindness blindness;
-    private final Map<UUID, Equip> pendingEquip = new HashMap<>();
     private final Map<UUID, BukkitTask> rerollTimeouts = new HashMap<>();
 
     public RewardDialogs(SHCrates plugin, boolean blind) {
@@ -71,7 +62,6 @@ public final class RewardDialogs implements Listener {
     public void shutdown() {
         for (BukkitTask task : rerollTimeouts.values()) task.cancel();
         rerollTimeouts.clear();
-        pendingEquip.clear();
         HandlerList.unregisterAll(this);
         blindness.shutdown();
     }
@@ -90,7 +80,7 @@ public final class RewardDialogs implements Listener {
             button(m.getRawPrefixedMessage("dialog_reroll_keep", ph), DialogAction.customClick(KEEP, null)),
             button(m.getRawPrefixedMessage("dialog_reroll_again", ph), DialogAction.customClick(REROLL, null)));
         ActionButton exit = button(m.getRawPrefixedMessage("dialog_reroll_close", ph), DialogAction.customClick(KEEP, null));
-        // gardé ouvert au clic : « Garder » peut ouvrir le dialogue « Équiper » sans clignoter
+        // gardé ouvert au clic : un dialogue ouvert par les commandes du lot remplace celui-ci sans clignoter
         DialogBase base = DialogBlindness.stayOpen(DialogBase.builder(Component.empty()).canCloseWithEscape(true)).body(body).build();
         Dialog dialog = Dialog.create(f -> f.empty().base(base).type(DialogType.multiAction(buttons).columns(1).exitAction(exit).build()));
         cancelTimeout(player.getUniqueId());
@@ -110,38 +100,6 @@ public final class RewardDialogs implements Listener {
         }
     }
 
-    // ------------------------------------------------------------------ équiper
-
-    /** Propose d'équiper tout de suite le cosmétique gagné (lot avec Equiper). En test, le bouton ne fait rien. */
-    public void showEquip(Player player, Reward reward, boolean test) {
-        if (reward.getEquipCommands().isEmpty() || !player.isOnline()) return;
-        MessageManager m = plugin.getMessageManager();
-        Map<String, String> ph = MessageManager.ph("%reward_display_name%", reward.getDisplayName());
-        List<DialogBody> body = new ArrayList<>();
-        body.add(title(m.getRawPrefixedMessage("dialog_equip_title", ph)));
-        body.add(item(reward));
-        body.add(DialogBody.plainMessage(text(m.getRawPrefixedMessage("dialog_equip_text", ph)), BODY_WIDTH));
-        List<ActionButton> buttons = List.of(
-            button(m.getRawPrefixedMessage("dialog_equip_now", ph), DialogAction.customClick(EQUIP, null)),
-            button(m.getRawPrefixedMessage("dialog_equip_later", ph), DialogBlindness.closeAction()));
-        DialogBase base = DialogBase.builder(Component.empty()).canCloseWithEscape(true).pause(false).body(body).build();
-        Dialog dialog = Dialog.create(f -> f.empty().base(base).type(DialogType.multiAction(buttons).columns(1).build()));
-        pendingEquip.put(player.getUniqueId(), new Equip(reward, test));
-        try {
-            blindness.show(player, dialog);
-        } catch (RuntimeException e) {
-            pendingEquip.remove(player.getUniqueId());
-            plugin.getLogger().log(Level.WARNING, "Dialogue « Équiper » impossible pour " + player.getName(), e);
-        }
-    }
-
-    /** Nouvelle ouverture : le dialogue « Équiper » encore à l'écran de la précédente est fermé. */
-    public void dismiss(Player player) {
-        if (pendingEquip.remove(player.getUniqueId()) != null) {
-            blindness.close(player);
-        }
-    }
-
     // ------------------------------------------------------------------ clics
 
     @EventHandler
@@ -157,32 +115,6 @@ public final class RewardDialogs implements Listener {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (cancelTimeout(player.getUniqueId())) plugin.getAnimationManager().performReroll(player);
             });
-        } else if (EQUIP.equals(key)) {
-            Bukkit.getScheduler().runTask(plugin, () -> equip(player));
-        }
-    }
-
-    private void equip(Player player) {
-        Equip pending = pendingEquip.remove(player.getUniqueId());
-        if (pending == null || !player.isOnline()) return;
-        if (pending.test()) {
-            plugin.getMessageManager().sendRawMessage(player, "scene_test_equip", MessageManager.ph());
-            return;
-        }
-        for (String raw : pending.reward().getEquipCommands()) {
-            String line = raw.replace("%player_name%", player.getName()).replace("%player%", player.getName());
-            line = Papi.apply(player, line);
-            try {
-                if (line.regionMatches(true, 0, "[joueur]", 0, 8)) {
-                    String cmd = line.substring(8).trim();
-                    player.performCommand(cmd.startsWith("/") ? cmd.substring(1) : cmd);
-                } else {
-                    String cmd = line.regionMatches(true, 0, "[console]", 0, 9) ? line.substring(9).trim() : line;
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.startsWith("/") ? cmd.substring(1) : cmd);
-                }
-            } catch (RuntimeException e) {
-                plugin.getLogger().log(Level.WARNING, "Commande Equiper en échec : " + line, e);
-            }
         }
     }
 
@@ -197,7 +129,6 @@ public final class RewardDialogs implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         // le lot d'une relance en attente est donné par stopAnimationForPlayer
         cancelTimeout(event.getPlayer().getUniqueId());
-        pendingEquip.remove(event.getPlayer().getUniqueId());
     }
 
     // ------------------------------------------------------------------ construction

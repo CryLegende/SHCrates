@@ -133,6 +133,9 @@ target_keys_header: "&d&lClés de box de %player%&7:" # Titre de section
 no_permission_for_target: "&7&l« &c&lSH &8&l» &c%player% &7n'a pas la permission pour cette action, ou vous n'avez pas la permission de le cibler."
 
 # /shcrates givekey
+command_usage_forceopen: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates forceopen <joueur> <caisse> [nombre]"
+# %amount%, %crate_name%, %target_player%
+forceopen_queued: "&7&l« &a&lSH &8&l» &a%amount% &7ouverture(s) de %crate_name% &7lancée(s) pour &a%target_player%&7."
 command_usage_givekey: "&7&l« &b&lSH &8&l» &7Usage: &b/shcrates givekey <player> <crateName> <amount> [physical|virtual]"
 key_given_physical: "&7&l« &a&lSH &8&l» &7Vous avez donné &a%amount% &7clé(s) physique(s) &a%crate_name% &7à &a%target_player%&7." # Message au donneur
 key_received_physical: "" # Message au receveur
@@ -223,10 +226,6 @@ dialog_reroll_text: "&7Vous pouvez garder %reward_display_name% &7ou tenter votr
 dialog_reroll_keep: "&aGarder ce lot"
 dialog_reroll_again: "&eRelancer"
 dialog_reroll_close: "&7Fermer et garder le lot"
-dialog_equip_title: "&fNouveau cosmétique !"
-dialog_equip_text: "&7%reward_display_name% &7est à vous. Équipez-le tout de suite, ou plus tard avec &f/cosmetiques&7."
-dialog_equip_now: "&aÉquiper maintenant"
-dialog_equip_later: "&7Plus tard"
 # /shcrates scene
 scene_usage: "&7&l« &e&lSH &8&l» &7Tapez &e/shcrates scene add [échelle]&7, &eremove&7, &elist &7ou &etest <caisse> [lot]&7."
 scene_spot_added: "&7&l« &a&lSH &8&l» &7Emplacement de scène posé en &a%x% %y% %z% &7(%world%, échelle %scale%)."
@@ -238,4 +237,3 @@ scene_test_started: "&7&l« &e&lSH &8&l» &7Essai de %crate_display_name% &7avec
 scene_test_no_place: "&7&l« &c&lSH &8&l» &7Pas de place correcte ici : en vrai, l'ouverture prendrait l'animation en menu."
 scene_test_not_scene: "&7&l« &c&lSH &8&l» &7%crate_display_name% &7n'a pas de scène (Animation.Type COFFRE_CELESTE ou MIROIR)."
 scene_test_unknown_reward: "&7&l« &c&lSH &8&l» &7Lot « %reward% » inconnu dans cette caisse."
-scene_test_equip: "&7&l« &e&lSH &8&l» &7Essai : rien n'est équipé."

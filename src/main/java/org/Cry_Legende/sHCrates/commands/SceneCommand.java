@@ -130,7 +130,7 @@ final class SceneCommand {
 
             @Override
             public void onEnd(Scene scene) {
-                plugin.getRewardDialogs().showEquip(player, chosen, true);
+                // essai : pas de dialogue de relance
             }
 
             @Override
