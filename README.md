@@ -20,7 +20,7 @@ Utilisé sur : **Opale**.
 
 ## Paliers, jauge et garanties
 
-- **Paliers de rareté** (`paliers` dans `config.yml`) : chaque récompense peut désigner son palier avec `Palier:`. Le palier donne la ligne « Rareté » de l'aperçu, la couleur du cadre quand la roulette ralentit, le son, le feu d'artifice, l'animation du totem, le titre et l'annonce au serveur. Une récompense sans palier garde le son `SoundWin` de la caisse et `FireworkOnWin`.
+- **Paliers de rareté** (`paliers` dans `config.yml`) : chaque récompense peut désigner son palier avec `Palier:`. Le palier donne la ligne « Rareté » de l'aperçu, la couleur du cadre quand la roulette ralentit, la couleur des scènes (`couleur`, sinon celle du nom), le son, le feu d'artifice, le lot qui jaillit à l'écran comme un totem, le titre et l'annonce au serveur. Une récompense sans palier garde le son `SoundWin` de la caisse et `FireworkOnWin`.
 - **Roulette pondérée** : les lots qui défilent sont tirés selon leurs vraies chances.
 - **Jauge de garantie** (`Jauge:` dans une caisse) : après `Seuil - 1` clés sans lot d'un des paliers visés, la clé suivante tire seulement parmi eux. Elle repart à zéro dès qu'un de ces lots sort. L'état s'affiche en barre d'action après chaque ouverture et à la réception de clés.
 - **Première clé** (`PremiereOuverture:`) : la toute première clé d'un joueur tire parmi les lots du palier donné ou mieux.
@@ -32,6 +32,36 @@ Utilisé sur : **Opale**.
 - Une animation en GUI donne le lot dès la fin du défilement quand le joueur ne peut pas le relancer ; avec une relance possible, il est donné à la fermeture, une fois le choix fait.
 
 Les compteurs (jauge, clés ouvertes, première clé, meilleur palier) sont rangés avec les clés virtuelles du joueur : section `progression` de `playerdata/<uuid>.yml`, ou lignes `#<compteur>` de la table `shcrates_keys` en mode réseau.
+
+## Scènes d'ouverture
+
+Deux animations se jouent dans le monde, devant le joueur, au lieu d'un menu (`Animation.Type` d'une caisse) :
+
+- **COFFRE_CELESTE** (Box Légendaire, environ 9 s) : un coffre-fort sinistre (vault ominous) tombe du ciel dans une traînée de feu d'âme, ou apparaît sur place sous un plafond. Il s'éveille, six lots de la box tournent autour de lui comme une machine à sous qui ralentit, puis sont aspirés. Son contour monte de palier en palier (couleur de chaque palier) jusqu'à celui du lot, il s'ouvre et éjecte le lot, qui flotte avec son nom et son palier. Le titre du palier s'affiche quand la scène s'efface.
+- **MIROIR** (Box Cosmétique, environ 8 s) : un miroir doré se forme ; dedans, le reflet du joueur (entité Mannequin avec son skin et son pseudo) suit son regard et ses coups de bras. Des cosmétiques défilent au-dessus, le cadre monte de palier en palier, puis le cosmétique gagné entre dans le miroir et le reflet l'essaie (`Essayage` du lot) : titre devant son pseudo, compagnon sur l'épaule, ou particules autour de lui. Le miroir éclate, puis un dialogue propose « Équiper maintenant » (`Equiper` du lot).
+
+Règles communes :
+
+- **Place** : une scène ne se joue que là où elle se voit bien. Rien dans son volume (blocs, entités, hologrammes et PNJ de FancyHolograms, DecentHolograms, FancyNpcs, autres scènes, autres joueurs) ni entre les yeux du joueur et elle. Plusieurs places devant le joueur sont essayées, à l'échelle 1 puis plus petite ; une place décalée de plus de 25° tourne la caméra du joueur vers elle. Dans les mondes de `scenes.mondes-emplacements` (le spawn), seuls les emplacements posés avec `/shcrates scene add` sont utilisés. Sans place correcte, ou pour un joueur Bedrock, l'ouverture prend l'animation en menu `Animation.Repli` (ROULETTE par défaut).
+- **Lot** : donné quand il sort de la scène. S'accroupir passe directement au lot ; un joueur qui s'éloigne (`scenes.distance-abandon`), change de monde ou se déconnecte reçoit son lot tout de suite. Un joueur qui peut relancer voit à la fin un dialogue « Garder ce lot / Relancer » (lot gardé sans réponse au bout de 30 s).
+- **Plusieurs joueurs** : les scènes ne se chevauchent jamais, un joueur qui ouvre ne voit que la sienne, les autres joueurs à moins de `scenes.visible-autour` blocs voient les plus proches (`scenes.max-par-spectateur`) avec le nom de leur joueur au-dessus, et n'entendent que les grands moments, moins fort.
+- **Entités** : block, item et text displays (mouvements interpolés par le client) et un Mannequin, non sauvegardés, envoyés seulement à ceux qui voient la scène, protégés des coups et des clics. Une lumière côté client éclaire le reflet la nuit.
+- **Totem du lot** : pour un palier qui a `totem: true`, c'est le lot lui-même qui jaillit à l'écran du joueur comme un totem d'immortalité, dans toutes les animations. Les feux d'artifice des paliers ne blessent plus personne.
+
+Clés des récompenses pour le Miroir :
+
+```yaml
+    Essayage:
+      Type: PARTICULE          # COMPAGNON, PARTICULE ou TITRE
+      Particules:              # PARTICULE : « HEART », « DUST purple 1.2 », « NOTE random », « DUST_COLOR_TRANSITION #C80000 #460000 »
+      - 'WITCH'
+      - 'DUST purple'
+      Titre: '&7[&aLucky&2☘&7]' # TITRE : texte affiché devant le pseudo du reflet
+    Equiper:                   # bouton « Équiper maintenant » (console ; « [joueur] » devant : lancée par le joueur)
+    - 'ppo %player_name% group load sorciere'
+```
+
+Réglages dans la section `scenes` de `config.yml` (visibilité, accroupi, distance d'abandon, mondes à emplacements, plugins d'hologrammes à éviter, sons de chaque moment) et `aveugler-pendant-dialogues`. Les emplacements sont gardés dans `scenes.yml`.
 
 ## Dépendances
 
@@ -76,6 +106,10 @@ Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (
 | `/shcrates info <caisse>` | `/shcr` | Nom, bloc, clé, animation, récompenses et blocs posés. | `shcrates.admin.info` |
 | `/shcrates reload` | `/shcr` | Relit `config.yml`, `messages.yml`, `crates/` et `locations.yml`. Un fichier illisible ou une caisse inutilisable annule tout. | `shcrates.admin.reload` |
 | `/shcrates import` | `/shcr` | Mode réseau : copie les clés virtuelles de `playerdata/` dans la base. | `shcrates.admin.import` |
+| `/shcrates scene add [échelle]` | `/shcr` | Pose un emplacement de scène à la position du joueur (au sol). | `shcrates.admin.scene` |
+| `/shcrates scene remove` | `/shcr` | Retire l'emplacement le plus proche (3 blocs). | `shcrates.admin.scene` |
+| `/shcrates scene list` | `/shcr` | Emplacements du monde du joueur. | `shcrates.admin.scene` |
+| `/shcrates scene test <caisse> [lot]` | `/shcr` | Joue la scène d'une caisse sans clé et sans rien donner. | `shcrates.admin.scene` |
 
 Les sous-commandes d'administration marchent depuis la console ; `setblock` et `removeblock` ont besoin du bloc visé par un joueur.
 
@@ -93,7 +127,7 @@ Les sous-commandes d'administration marchent depuis la console ; `setblock` et `
 | `shcrates.removeblock.<caisse>` | Casser le bloc d'une caisse. | `op` |
 | `shcrates.bypass.creative` | Ouvrir une caisse en mode créatif (ne se déduit pas de `shcrates.admin`). | `op` |
 | `shcrates.admin` | Toute l'administration, aperçu et ouverture de toutes les caisses (parent des nœuds suivants). | `op` |
-| `shcrates.admin.givekey` `.takekey` `.giveall` `.setblock` `.removeblock` `.reload` `.import` `.info` | Une sous-commande chacun. | `op` |
+| `shcrates.admin.givekey` `.takekey` `.giveall` `.setblock` `.removeblock` `.reload` `.import` `.info` `.scene` | Une sous-commande chacun. | `op` |
 | `shcrates.admin.previewothers` `.openothers` `.keysothers` `.statsothers` | Viser un autre joueur avec `preview`, `open`, `keys` ou `stats`. | `op` |
 
 ## Placeholders

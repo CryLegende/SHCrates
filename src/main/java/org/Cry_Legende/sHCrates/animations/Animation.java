@@ -38,4 +38,19 @@ public interface Animation {
      * @param giveReward Si la récompense doit quand même être donnée (par exemple, si l'animation était sur le point de finir).
      */
     void stop(Player player, boolean giveReward);
+
+    /**
+     * Animation jouée dans le monde (scène), sans menu : l'ouverture est suivie jusqu'à la sortie du lot.
+     */
+    default boolean isWorld() {
+        return false;
+    }
+
+    /**
+     * Appelée avant l'ouverture : faux si l'animation ne peut pas se jouer ici (une scène sans place correcte), l'ouverture
+     * prend alors l'animation de repli de la caisse.
+     */
+    default boolean prepare(Player player, Crate crate, Location crateLocation) {
+        return true;
+    }
 }

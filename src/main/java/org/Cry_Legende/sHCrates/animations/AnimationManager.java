@@ -9,6 +9,9 @@ import org.Cry_Legende.sHCrates.crates.CrateManager;
 import org.Cry_Legende.sHCrates.crates.Tier;
 import org.Cry_Legende.sHCrates.utils.Papi;
 import org.Cry_Legende.sHCrates.utils.SoundUtils;
+import org.Cry_Legende.sHCrates.scenes.ItemTotem;
+import org.Cry_Legende.sHCrates.scenes.Scene;
+import org.Cry_Legende.sHCrates.scenes.SceneKind;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
@@ -83,6 +86,8 @@ public class AnimationManager {
         registerAnimation(new RouletteAnimation(plugin));
         registerAnimation(new CSGOAnimation(plugin));
         registerAnimation(new WheelAnimation(plugin));
+        registerAnimation(new SceneAnimation(plugin, SceneKind.COFFRE_CELESTE));
+        registerAnimation(new SceneAnimation(plugin, SceneKind.MIROIR));
     }
 
     public void registerAnimation(Animation animation) {
@@ -170,7 +175,10 @@ public class AnimationManager {
 
     private void startCrateOpeningLogic(Player player, Crate crate, Location crateLocation, Draw draw, boolean usedPhysicalKey, boolean usedVirtualKey, String animationTypeName) {
         Reward chosenReward = draw.reward();
-        Animation animation = getAnimation(animationTypeName).orElseGet(() -> getAnimation(configManager.getDefaultAnimationType()).orElse(getAnimation("NONE").get()));
+        Animation configured = getAnimation(animationTypeName).orElseGet(() -> getAnimation(configManager.getDefaultAnimationType()).orElse(getAnimation("NONE").get()));
+        // Scène dans le monde sans place correcte ici (ou joueur Bedrock) : animation de repli en menu de la caisse
+        Animation animation = configured.isWorld() && !configured.prepare(player, crate, crateLocation)
+            ? fallbackAnimation(crate) : configured;
         ActiveAnimationInfo animationInfo = new ActiveAnimationInfo(animation, crate, chosenReward, crateLocation);
         animationInfo.setGuarantee(draw.guarantee());
 
@@ -209,7 +217,7 @@ public class AnimationManager {
      */
     private void beginAnimation(Player player, Crate crate, Location crateLocation, Draw draw, Animation animation, ActiveAnimationInfo animationInfo) {
         Reward chosenReward = draw.reward();
-        boolean isInstantAnimation = !animation.usesGUI();
+        boolean isInstantAnimation = !animation.usesGUI() && !animation.isWorld();
         if (isInstantAnimation) {
             // Récompense donnée tout de suite : l'ouverture n'a pas besoin d'être suivie. L'enregistrer
             // bloquait le joueur (« déjà en train d'ouvrir ») quand un autre joueur relançait la même
@@ -245,7 +253,7 @@ public class AnimationManager {
 
         // GUI refusé (InventoryOpenEvent annulé par un autre plugin) : sans inventaire ouvert, la récompense
         // ne serait donnée qu'à la déconnexion et le joueur resterait bloqué « en ouverture ».
-        if (!isInstantAnimation && activeAnimations.get(player.getUniqueId()) == animationInfo
+        if (animation.usesGUI() && activeAnimations.get(player.getUniqueId()) == animationInfo
             && !guiManager.isAnimationInventory(player.getOpenInventory().getTopInventory())) {
             plugin.getLogger().warning("Animation GUI for " + player.getName() + " did not open, reward given directly.");
             stopAnimationForPlayer(player, true);
@@ -279,6 +287,68 @@ public class AnimationManager {
             } catch (RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "Crate " + crate.getId() + ": block command failed: " + line, e);
             }
+        }
+    }
+
+    /** Animation de repli (Animation.Repli) d'une caisse dont la scène ne peut pas se jouer : toujours une animation en menu. */
+    private Animation fallbackAnimation(Crate crate) {
+        return getAnimation(crate.getAnimationConfig().getFallbackType())
+            .filter(a -> !a.isWorld())
+            .orElseGet(() -> getAnimation("ROULETTE").orElse(getAnimation("NONE").get()));
+    }
+
+    // ------------------------------------------------------------------ scènes
+
+    /**
+     * Le lot sort d'une scène : effets du palier, puis lot donné, sauf si le joueur peut encore le relancer (le dialogue
+     * de relance arrive à la fin de la scène). {@code scene} est null quand la scène n'a pas pu se rejouer (relance sans
+     * place) : le lot est alors donné tout de suite.
+     */
+    public void onSceneReveal(Player player, Scene scene) {
+        ActiveAnimationInfo info = activeAnimations.get(player.getUniqueId());
+        if (info == null) return;
+        reveal(player, info.getCrate(), info.getChosenReward(), info.getCrateLocation(), info.getGuarantee(), scene);
+        if (!info.isRewardGiven() && (info.hasRerollUsed() || !canReroll(player, info.getCrate()))) {
+            info.setRewardGiven(true);
+            activeAnimations.remove(player.getUniqueId(), info);
+            giveReward(player, info.getCrate(), info.getChosenReward(), info.getCrateLocation());
+        }
+    }
+
+    /** Fin d'une scène : dialogue de relance si le lot attend encore, sinon proposition d'équiper le cosmétique. */
+    public void onSceneEnd(Player player, Scene scene) {
+        if (!player.isOnline()) return;
+        ActiveAnimationInfo info = activeAnimations.get(player.getUniqueId());
+        if (info != null && !info.isRewardGiven()) {
+            plugin.getRewardDialogs().showReroll(player, info.getChosenReward());
+            return;
+        }
+        if (scene != null) {
+            plugin.getRewardDialogs().showEquip(player, scene.reward(), false);
+        }
+    }
+
+    /** Le joueur a quitté la scène (trop loin, autre monde) : son lot lui est donné tout de suite. */
+    public void onSceneAbandon(Player player, Scene scene, boolean wasRevealed) {
+        ActiveAnimationInfo info = activeAnimations.get(player.getUniqueId());
+        if (info == null || info.isRewardGiven()) return;
+        if (!wasRevealed) {
+            reveal(player, info.getCrate(), info.getChosenReward(), info.getCrateLocation(), info.getGuarantee(), null);
+        }
+        info.setRewardGiven(true);
+        activeAnimations.remove(player.getUniqueId(), info);
+        giveReward(player, info.getCrate(), info.getChosenReward(), info.getCrateLocation());
+    }
+
+    /** Dialogue de relance : le joueur garde son lot (bouton, Échap ou délai dépassé). */
+    public void keepReward(Player player) {
+        ActiveAnimationInfo info = activeAnimations.get(player.getUniqueId());
+        if (info == null || info.isRewardGiven()) return;
+        info.setRewardGiven(true);
+        activeAnimations.remove(player.getUniqueId(), info);
+        giveReward(player, info.getCrate(), info.getChosenReward(), info.getCrateLocation());
+        if (info.getAnimation().isWorld()) {
+            plugin.getRewardDialogs().showEquip(player, info.getChosenReward(), false);
         }
     }
 
@@ -431,25 +501,35 @@ public class AnimationManager {
      * garantie qui l'a imposé. Un lot sans palier garde l'ancien comportement (son de la caisse, FireworkOnWin).
      */
     public void reveal(Player player, Crate crate, Reward reward, Location crateLocation, Guarantee guarantee) {
+        reveal(player, crate, reward, crateLocation, guarantee, null);
+    }
+
+    /**
+     * @param scene scène d'où sort le lot, ou null : le feu d'artifice éclate alors au-dessus du bloc ou du joueur ; avec
+     *              une scène, au-dessus du lot, et seuls ceux qui la voient le voient.
+     */
+    public void reveal(Player player, Crate crate, Reward reward, Location crateLocation, Guarantee guarantee, Scene scene) {
         if (reward == null || !player.isOnline()) return;
         Tier tier = tierOf(reward);
+        Location fireworkAt = scene != null ? scene.focus().add(0, 0.6, 0)
+            : crateLocation != null ? crateLocation.clone().add(0.5, 1.5, 0.5) : player.getLocation().add(0, 2, 0);
         if (tier == null) {
             playSound(player, crate.getAnimationConfig().getSoundWin(), 1f, 1f);
-            if (reward.hasFireworkOnWin() && crateLocation != null) {
-                spawnFirework(crateLocation.clone().add(0.5, 1.5, 0.5));
+            if (reward.hasFireworkOnWin() && (crateLocation != null || scene != null)) {
+                spawnFirework(fireworkAt, scene);
             }
         } else {
             playSound(player, tier.sound(), tier.volume(), tier.pitch());
             if (tier.firework()) {
-                spawnFirework(crateLocation != null ? crateLocation.clone().add(0.5, 1.5, 0.5) : player.getLocation().add(0, 2, 0));
+                spawnFirework(fireworkAt, scene);
             }
             if (tier.totem()) {
-                player.playEffect(EntityEffect.PROTECTED_FROM_DEATH);
+                // le lot lui-même jaillit à l'écran du joueur, à la place du totem
+                ItemTotem.play(plugin, player, reward.getDisplayItemStack());
             }
-            if (!tier.title().isEmpty() || !tier.subtitle().isEmpty()) {
-                player.showTitle(Title.title(
-                    LEGACY.deserialize(ChatUtils.colorize(tier.title().replace("%reward%", reward.getDisplayName()))),
-                    LEGACY.deserialize(ChatUtils.colorize(tier.subtitle().replace("%reward%", reward.getDisplayName())))));
+            // dans une scène, le titre cacherait le lot au centre de l'écran : la scène l'affiche à sa fin
+            if (scene == null) {
+                showTierTitle(player, reward);
             }
         }
         if (guarantee == Guarantee.FIRST_OPEN) {
@@ -458,6 +538,15 @@ public class AnimationManager {
             messageManager.sendRawMessage(player, "guarantee_gauge", MessageManager.ph(
                 "%gauge_name%", crate.getGauge().name(), "%crate_display_name%", crate.getDisplayName()));
         }
+    }
+
+    /** Titre et sous-titre du palier du lot (rien pour un lot sans palier ou un palier sans titre). */
+    public void showTierTitle(Player player, Reward reward) {
+        Tier tier = tierOf(reward);
+        if (tier == null || !player.isOnline() || (tier.title().isEmpty() && tier.subtitle().isEmpty())) return;
+        player.showTitle(Title.title(
+            LEGACY.deserialize(ChatUtils.colorize(tier.title().replace("%reward%", reward.getDisplayName()))),
+            LEGACY.deserialize(ChatUtils.colorize(tier.subtitle().replace("%reward%", reward.getDisplayName())))));
     }
 
     /** Fin de l'hologramme d'une QuickCrate : dévoilement avec la garantie retenue à l'ouverture. */
@@ -719,14 +808,24 @@ public class AnimationManager {
     }
 
     public void spawnFirework(Location location) {
+        spawnFirework(location, null);
+    }
+
+    /** Feu d'artifice qui ne blesse personne ; pour une scène, montré seulement à ceux qui la voient. */
+    public void spawnFirework(Location location, Scene scene) {
         if (location == null || location.getWorld() == null) return;
-        location.getWorld().spawn(location, Firework.class, fw -> {
+        Firework firework = location.getWorld().spawn(location, Firework.class, fw -> {
             FireworkMeta fwm = fw.getFireworkMeta();
             fwm.setPower(1);
             fwm.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.BALL_LARGE).withColor(Color.ORANGE, Color.YELLOW).withFade(Color.WHITE).build());
             fw.setFireworkMeta(fwm);
-            fw.detonate();
+            if (plugin.getSceneManager() != null) plugin.getSceneManager().tagFirework(fw);
+            if (scene != null) fw.setVisibleByDefault(false);
         });
+        if (scene != null) {
+            for (Player viewer : scene.viewers()) viewer.showEntity(plugin, firework);
+        }
+        firework.detonate();
     }
 
     /**

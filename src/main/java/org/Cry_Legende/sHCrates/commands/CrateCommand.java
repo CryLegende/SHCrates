@@ -42,7 +42,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
 
     // /crate : fonctions joueur ; /shcrates : administration. Chaque nom accepte toutes les sous-commandes, sous réserve des droits.
     private static final List<String> PLAYER_SUBCOMMANDS = List.of("preview", "open", "openall", "keys", "stats", "list");
-    private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info");
+    private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info", "scene");
 
 
     public CrateCommand(SHCrates plugin) {
@@ -129,6 +129,9 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 break;
             case "import":
                 handleImportCommand(sender);
+                break;
+            case "scene":
+                new SceneCommand(plugin).handle(sender, args);
                 break;
             default:
                 handleInfoCommand(sender, args);
@@ -723,6 +726,8 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             }
             return;
         }
+        plugin.getSceneManager().spots().load();
+        plugin.getRewardDialogs().setBlind(plugin.getConfigManager().getBoolean("aveugler-pendant-dialogues", true));
         messageManager.sendMessage(sender, "reload_success");
         messageManager.sendMessage(sender, "reload_network_notice");
     }
@@ -817,6 +822,9 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                     } else if (args.length == 4) { // [physical|virtual] ou [p|v]
                         suggestions.addAll(List.of("physical", "virtual", "p", "v"));
                     }
+                    break;
+                case "scene":
+                    suggestions.addAll(SceneCommand.complete(plugin, args));
                     break;
                 case "setblock":
                 case "info":

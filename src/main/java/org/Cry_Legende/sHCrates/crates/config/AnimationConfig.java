@@ -9,9 +9,11 @@ public class AnimationConfig {
     private final String soundWin;
     private final int rerollButtonSlot;
     private final QuickCrateAnimConfig quickCrateAnimConfig;
+    private final String fallbackType;
 
 
-    public AnimationConfig(String type, String guiTitle, int spinDurationTicks, String soundOpen, String soundSpin, String soundWin, int rerollButtonSlot, QuickCrateAnimConfig quickCrateAnimConfig) {
+    public AnimationConfig(String type, String guiTitle, int spinDurationTicks, String soundOpen, String soundSpin, String soundWin, int rerollButtonSlot, QuickCrateAnimConfig quickCrateAnimConfig, String fallbackType) {
+        this.fallbackType = fallbackType == null ? "ROULETTE" : fallbackType.toUpperCase();
         this.type = type.toUpperCase();
         this.guiTitle = guiTitle;
         this.spinDurationTicks = spinDurationTicks;
@@ -48,6 +50,11 @@ public class AnimationConfig {
 
     public int getRerollButtonSlot() {
         return rerollButtonSlot;
+    }
+
+    /** Animation en menu jouée à la place d'une scène qui n'a pas trouvé de place (clé Repli). */
+    public String getFallbackType() {
+        return fallbackType;
     }
 
     public QuickCrateAnimConfig getQuickCrateAnimConfig() {

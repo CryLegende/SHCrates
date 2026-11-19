@@ -2,8 +2,11 @@ package org.Cry_Legende.sHCrates.config;
 
 import org.Cry_Legende.sHCrates.SHCrates;
 import org.Cry_Legende.sHCrates.crates.Tier;
+import org.Cry_Legende.sHCrates.scenes.SceneSettings;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -54,6 +57,8 @@ public class ConfigManager {
 
     // Paliers de rareté, par identifiant, dans l'ordre du fichier
     private Map<String, Tier> tiers = Collections.emptyMap();
+    // Scènes d'ouverture dans le monde (section scenes)
+    private SceneSettings sceneSettings = SceneSettings.defaults();
 
     // Reroll Settings
     private boolean rerollEnabled;
@@ -130,6 +135,7 @@ public class ConfigManager {
         }
         namedConditions = named;
         tiers = loadTiers(config.getConfigurationSection("paliers"));
+        sceneSettings = SceneSettings.load(config.getConfigurationSection("scenes"), plugin.getLogger());
 
         // Load Reroll Settings
         rerollEnabled = config.getBoolean("reroll.enabled", true);
@@ -189,10 +195,11 @@ public class ConfigManager {
             if (t == null) continue;
             String glassName = t.getString("vitre", "");
             Material glass = glassName.isEmpty() ? null : Material.matchMaterial(glassName);
+            String rawName = t.getString("nom", id);
             loaded.put(id.toLowerCase(Locale.ROOT), new Tier(
                 id.toLowerCase(Locale.ROOT),
                 t.getInt("rang", loaded.size() + 1),
-                ChatUtils.colorize(t.getString("nom", id)),
+                ChatUtils.colorize(rawName),
                 glass,
                 t.getString("son", ""),
                 (float) t.getDouble("volume", 1.0),
@@ -201,14 +208,67 @@ public class ConfigManager {
                 t.getBoolean("totem", false),
                 t.getString("titre", ""),
                 t.getString("sous-titre", ""),
-                t.getBoolean("annonce", false)));
+                t.getBoolean("annonce", false),
+                tierColor(t.getString("couleur", ""), rawName, id)));
         }
         return loaded;
     }
 
+    /**
+     * Couleur d'un palier : « couleur » en #RRGGBB, sinon la première couleur du nom (&6, &#FFAA00), sinon blanc.
+     */
+    private Color tierColor(String configured, String rawName, String id) {
+        if (configured != null && !configured.isBlank()) {
+            Color parsed = parseHexColor(configured);
+            if (parsed != null) return parsed;
+            plugin.getLogger().warning("Palier " + id + " : couleur « " + configured + " » illisible (format #RRGGBB).");
+        }
+        String name = rawName == null ? "" : rawName;
+        for (int i = 0; i + 1 < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c != '&' && c != '§') continue;
+            char code = Character.toLowerCase(name.charAt(i + 1));
+            if (code == '#' && i + 8 <= name.length()) {
+                Color hex = parseHexColor(name.substring(i + 1, i + 8));
+                if (hex != null) return hex;
+            }
+            NamedTextColor legacy = LEGACY_COLORS.get(code);
+            if (legacy != null) {
+                return Color.fromRGB(legacy.value());
+            }
+        }
+        return Color.WHITE;
+    }
+
+    /** #RRGGBB ou RRGGBB, null si illisible. */
+    public static Color parseHexColor(String text) {
+        String s = text.trim();
+        if (s.startsWith("#")) s = s.substring(1);
+        if (s.length() != 6) return null;
+        try {
+            return Color.fromRGB(Integer.parseInt(s, 16));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static final Map<Character, NamedTextColor> LEGACY_COLORS = Map.ofEntries(
+        Map.entry('0', NamedTextColor.BLACK), Map.entry('1', NamedTextColor.DARK_BLUE),
+        Map.entry('2', NamedTextColor.DARK_GREEN), Map.entry('3', NamedTextColor.DARK_AQUA),
+        Map.entry('4', NamedTextColor.DARK_RED), Map.entry('5', NamedTextColor.DARK_PURPLE),
+        Map.entry('6', NamedTextColor.GOLD), Map.entry('7', NamedTextColor.GRAY),
+        Map.entry('8', NamedTextColor.DARK_GRAY), Map.entry('9', NamedTextColor.BLUE),
+        Map.entry('a', NamedTextColor.GREEN), Map.entry('b', NamedTextColor.AQUA),
+        Map.entry('c', NamedTextColor.RED), Map.entry('d', NamedTextColor.LIGHT_PURPLE),
+        Map.entry('e', NamedTextColor.YELLOW), Map.entry('f', NamedTextColor.WHITE));
+
     /** Palier par identifiant (sans tenir compte de la casse), ou null s'il n'existe pas. */
     public Tier getTier(String id) {
         return id == null ? null : tiers.get(id.toLowerCase(Locale.ROOT));
+    }
+
+    public SceneSettings getSceneSettings() {
+        return sceneSettings;
     }
 
     public Collection<Tier> getTiers() {

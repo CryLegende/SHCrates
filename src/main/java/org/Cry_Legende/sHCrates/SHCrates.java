@@ -6,6 +6,8 @@ import org.Cry_Legende.sHCrates.config.ConfigManager;
 import org.Cry_Legende.sHCrates.config.CrateConfigManager;
 import org.Cry_Legende.sHCrates.config.MessageManager;
 import org.Cry_Legende.sHCrates.crates.CrateManager;
+import org.Cry_Legende.sHCrates.dialogs.RewardDialogs;
+import org.Cry_Legende.sHCrates.scenes.SceneManager;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
 import org.Cry_Legende.sHCrates.listeners.BlockBreakListener;
 import org.Cry_Legende.sHCrates.listeners.InventoryClickListener;
@@ -38,6 +40,9 @@ public final class SHCrates extends JavaPlugin {
     private GUIManager guiManager;
     private AnimationManager animationManager;
     private PlayerDataManager playerDataManager;
+    // Scènes d'ouverture jouées dans le monde (Box Légendaire, Box Cosmétique) et dialogues de fin
+    private SceneManager sceneManager;
+    private RewardDialogs rewardDialogs;
     // Non nul seulement avec SHNetwork : clés virtuelles dans la base partagée
     private NetworkKeys network;
 
@@ -62,6 +67,8 @@ public final class SHCrates extends JavaPlugin {
         this.crateManager = new CrateManager(this);
         this.guiManager = new GUIManager(this);
         this.animationManager = new AnimationManager(this);
+        this.sceneManager = new SceneManager(this);
+        this.rewardDialogs = new RewardDialogs(this, configManager.getBoolean("aveugler-pendant-dialogues", true));
 
         // Charger les données des crates (y compris les emplacements physiques et les types de crates)
         this.crateManager.loadCrates(); // Cela va charger les .yml de crates/ et les emplacements
@@ -73,6 +80,7 @@ public final class SHCrates extends JavaPlugin {
 
         // 4. Enregistrement des listeners
         registerListeners();
+        sceneManager.start();
 
         // 5. Hook avec PlaceholderAPI
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -95,6 +103,14 @@ public final class SHCrates extends JavaPlugin {
         // aucune tâche ne peut plus être planifiée, les récompenses sont donc données tout de suite.
         if (animationManager != null) {
             animationManager.finishAllAnimations();
+        }
+
+        // Scènes : entités retirées (les lots viennent d'être soldés), vue rendue aux joueurs d'un dialogue
+        if (sceneManager != null) {
+            sceneManager.shutdown();
+        }
+        if (rewardDialogs != null) {
+            rewardDialogs.shutdown();
         }
 
         // --- CORRECTION 4 : APPEL AU NETTOYAGE GLOBAL ---
@@ -203,6 +219,14 @@ public final class SHCrates extends JavaPlugin {
 
     public AnimationManager getAnimationManager() {
         return animationManager;
+    }
+
+    public SceneManager getSceneManager() {
+        return sceneManager;
+    }
+
+    public RewardDialogs getRewardDialogs() {
+        return rewardDialogs;
     }
 
     public PlayerDataManager getPlayerDataManager() {

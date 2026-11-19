@@ -75,6 +75,13 @@
 #                                   la section 'conditions' ci-dessous, ou expression écrite sur le lot
 #                                   ("%superior_island_level% < 5000"). Opérateurs < <= > >= == !=.
 # Les commandes des récompenses passent aussi par PlaceholderAPI (montants qui suivent le joueur).
+#   Essayage:                       MIROIR : ce que le reflet essaie. Type COMPAGNON (l'objet du lot sur son épaule),
+#     Type: PARTICULE               PARTICULE (Particules : « HEART », « DUST purple 1.2 », « NOTE random »...) ou TITRE
+#     Particules: [WITCH]           (Titre : texte affiché devant son pseudo). Sans Essayage, l'objet flotte devant lui.
+#   Equiper:                        Commandes du bouton « Équiper maintenant » du dialogue de fin (console ; « [joueur] »
+#   - "ppo %player_name% group load sorciere"   devant : lancée par le joueur). Sans Equiper, pas de dialogue.
+# Clé propre à l'animation d'une caisse :
+#   Animation.Repli: WHEEL          Animation en menu jouée quand la scène n'a pas de place correcte (par défaut : ROULETTE).
 # ======================================================================== #
 
 # --- Paramètres Généraux ---
@@ -92,7 +99,7 @@ physical_key_nbt_tag: "SHCrates_KeyID"
 # Animation par défaut à utiliser si aucune n'est spécifiée dans la configuration
 # d'une caisse individuelle.
 # Types d'animations disponibles (doivent correspondre aux noms enregistrés dans AnimationManager):
-#   NONE, QUICKCRATE, ROULETTE, CSGO, WHEEL
+#   NONE, QUICKCRATE, ROULETTE, CSGO, WHEEL, COFFRE_CELESTE, MIROIR
 default_animation_type: "ROULETTE"
 
 # --- Interaction avec les Caisses Physiques ---
@@ -177,7 +184,8 @@ son_cle_recue: ENTITY_EXPERIENCE_ORB_PICKUP
 #   vitre         Vitre du cadre de la roulette quand elle ralentit sur un lot de ce palier ("" : cadre inchangé).
 #   son           Son joué au joueur quand le lot apparaît (ancien nom ou clé), volume et hauteur.
 #   feu-artifice  Feu d'artifice au-dessus du bloc de la caisse (ou du joueur pour une ouverture par commande).
-#   totem         Animation du totem d'immortalité sur l'écran du joueur ; elle joue son propre son.
+#   totem         Le lot jaillit à l'écran du joueur comme un totem d'immortalité (qui joue son propre son).
+#   couleur       Couleur du palier dans les scènes (#RRGGBB) ; absente, celle du nom (&6 → or).
 #   titre         Titre et sous-titre affichés au joueur ("" : aucun), %reward% = nom du lot.
 #   annonce       Annonce du gain à tout le serveur (message announce_win).
 paliers:
@@ -215,6 +223,62 @@ paliers:
     titre: "&6&lLÉGENDAIRE"
     sous-titre: "%reward%"
     annonce: true
+
+# Texte des dialogues sur fond noir : le joueur est aveuglé tant qu'un dialogue de SHCrates est affiché (style SkyHand)
+aveugler-pendant-dialogues: true
+
+# --- Scènes d'ouverture (Animation.Type COFFRE_CELESTE ou MIROIR dans crates/) ---
+# Jouées dans le monde, devant le joueur : un coffre-fort céleste qui tombe du ciel (COFFRE_CELESTE), ou un miroir où le
+# reflet du joueur essaie le cosmétique gagné (MIROIR). Une scène ne se joue que là où elle se voit bien : rien dans son
+# volume (blocs, entités, hologrammes et PNJ, autres scènes, autres joueurs) ni entre le joueur et elle. Sinon l'ouverture
+# prend l'animation de repli de la caisse (Animation.Repli, ROULETTE par défaut). Le lot est donné quand il sort.
+scenes:
+  # Les joueurs à moins de ce nombre de blocs voient la scène d'un autre (0 : seulement celui qui ouvre)
+  visible-autour: 24
+  # Scènes vues à la fois par un spectateur, les plus proches. Un joueur qui ouvre ne voit que la sienne.
+  max-par-spectateur: 2
+  # S'accroupir passe directement au lot
+  passer-en-accroupi: true
+  # Au-delà de cette distance (ou dans un autre monde), le lot est donné tout de suite et la scène retirée
+  distance-abandon: 20
+  # Mondes où une scène ne se joue que sur un emplacement posé avec /shcrates scene add : leur décor est souvent envoyé
+  # par paquets (modèles, hologrammes), invisible pour le serveur, seul un humain sait où une scène se voit bien.
+  mondes-emplacements:
+    - spawn
+  # Distance maximale entre le joueur et un emplacement
+  rayon-emplacements: 24
+  # Tourner la caméra du joueur vers l'emplacement quand il ne le regarde pas
+  tourner-camera: true
+  # Joueurs Bedrock : animation de repli (Geyser n'affiche pas ces entités)
+  repli-bedrock: true
+  # Hologrammes et PNJ envoyés par paquets dont les scènes s'écartent (seulement les plugins installés)
+  eviter-plugins:
+    - FancyHolograms
+    - DecentHolograms
+    - FancyNpcs
+  # Sons des scènes (ancien nom ou clé, "" : aucun). Chacun répond à ce qui se voit au même moment.
+  sons:
+    coffre-chute: entity.phantom.swoop
+    coffre-apparition: block.trial_spawner.ominous_activate
+    coffre-impact: item.mace.smash_ground_heavy
+    coffre-pose: block.heavy_core.place
+    coffre-eveil: block.vault.activate
+    coffre-cran: block.note_block.chime
+    coffre-aspiration: block.trial_spawner.about_to_spawn_item
+    coffre-palier: block.respawn_anchor.charge
+    coffre-ouverture: block.vault.open_shutter
+    coffre-ejection: block.vault.eject_item
+    coffre-fin: block.vault.deactivate
+    miroir-cadre: block.amethyst_block.resonate
+    miroir-verre: block.beacon.power_select
+    miroir-reflet: entity.illusioner.mirror_move
+    miroir-cran: block.note_block.bell
+    miroir-palier: block.amethyst_block.resonate
+    miroir-entree: entity.illusioner.cast_spell
+    miroir-titre: ui.cartography_table.take_result
+    miroir-compagnon: entity.allay.item_given
+    miroir-particule: block.amethyst_block.chime
+    miroir-bris: block.glass.break
 
 # --- Paramètres de Relance (Reroll) ---
 # Permet aux joueurs de relancer une récompense à la fin d'une animation.

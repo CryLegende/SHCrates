@@ -210,3 +210,32 @@ stats_gauge_line: "&8   %gauge_name% &7: &e%current%&7/&e%threshold%"
 stats_collection_line: "&8   &7Collection : &d%owned%&7/&d%total%"
 stats_no_best: "&8-"
 stats_empty: "&7&l« &e&lSH &8&l» &e%player% &7n'a encore ouvert aucune box."
+
+# --- Scènes d'ouverture (Box Légendaire, Box Cosmétique) ---
+# Barre d'action au début d'une scène
+scene_skip_hint: "&7Accroupissez-vous pour passer l'animation"
+# Au-dessus de la scène, pour les joueurs autour (%player_name%, %crate_display_name%) ; "" : rien
+scene_spectator_label: "%crate_display_name% &7de &f%player_name%"
+# Dialogues de fin : première ligne du titre, puis les textes (%reward_display_name%)
+dialog_title: "&7&l« &d&lSkyHand &8&l»"
+dialog_reroll_title: "&fGarder ce lot ?"
+dialog_reroll_text: "&7Vous pouvez garder %reward_display_name% &7ou tenter votre chance une dernière fois."
+dialog_reroll_keep: "&aGarder ce lot"
+dialog_reroll_again: "&eRelancer"
+dialog_reroll_close: "&7Fermer et garder le lot"
+dialog_equip_title: "&fNouveau cosmétique !"
+dialog_equip_text: "&7%reward_display_name% &7est à vous. Équipez-le tout de suite, ou plus tard avec &f/cosmetiques&7."
+dialog_equip_now: "&aÉquiper maintenant"
+dialog_equip_later: "&7Plus tard"
+# /shcrates scene
+scene_usage: "&7&l« &e&lSH &8&l» &7Tapez &e/shcrates scene add [échelle]&7, &eremove&7, &elist &7ou &etest <caisse> [lot]&7."
+scene_spot_added: "&7&l« &a&lSH &8&l» &7Emplacement de scène posé en &a%x% %y% %z% &7(%world%, échelle %scale%)."
+scene_spot_removed: "&7&l« &a&lSH &8&l» &7Emplacement &a%x% %y% %z% &7retiré."
+scene_spot_none_near: "&7&l« &c&lSH &8&l» &7Aucun emplacement de scène à moins de 3 blocs."
+scene_spot_list_header: "&7&l« &e&lSH &8&l» &e%count% &7emplacement(s) de scène dans %world% :"
+scene_spot_list_line: "&8• &f%x% %y% %z% &7échelle %scale%, à %distance% blocs"
+scene_test_started: "&7&l« &e&lSH &8&l» &7Essai de %crate_display_name% &7avec %reward_display_name% &8(%spot%)&7, rien n'est donné."
+scene_test_no_place: "&7&l« &c&lSH &8&l» &7Pas de place correcte ici : en vrai, l'ouverture prendrait l'animation en menu."
+scene_test_not_scene: "&7&l« &c&lSH &8&l» &7%crate_display_name% &7n'a pas de scène (Animation.Type COFFRE_CELESTE ou MIROIR)."
+scene_test_unknown_reward: "&7&l« &c&lSH &8&l» &7Lot « %reward% » inconnu dans cette caisse."
+scene_test_equip: "&7&l« &e&lSH &8&l» &7Essai : rien n'est équipé."

@@ -28,6 +28,10 @@ public class Reward {
     private String tierId;
     // Condition PlaceholderAPI (« %placeholder% < 5000 »), null : toujours gagnable
     private String condition;
+    // Miroir : ce que le reflet essaie (null : l'objet flotte devant lui)
+    private TryOn tryOn;
+    // Commandes du bouton « Équiper maintenant » du dialogue de fin ([joueur] devant : lancée par le joueur)
+    private List<String> equipCommands = List.of();
 
     public Reward(String id, boolean displayInPreview, String displayName, Material displayItemMaterial, String playerSkinTexture,
                   int displayAmount, List<String> lore, double chance, boolean fireworkOnWin,
@@ -133,6 +137,22 @@ public class Reward {
 
     public String getCondition() {
         return condition;
+    }
+
+    public TryOn getTryOn() {
+        return tryOn;
+    }
+
+    public void setTryOn(TryOn tryOn) {
+        this.tryOn = tryOn;
+    }
+
+    public List<String> getEquipCommands() {
+        return equipCommands;
+    }
+
+    public void setEquipCommands(List<String> equipCommands) {
+        this.equipCommands = equipCommands == null ? List.of() : List.copyOf(equipCommands);
     }
 
     public void setCondition(String condition) {

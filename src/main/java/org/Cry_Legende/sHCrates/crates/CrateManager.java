@@ -5,6 +5,7 @@ import org.Cry_Legende.sHCrates.config.ConfigManager;
 import org.Cry_Legende.sHCrates.config.CrateConfigManager;
 import org.Cry_Legende.sHCrates.config.MessageManager;
 import org.Cry_Legende.sHCrates.crates.config.AnimationConfig;
+import org.Cry_Legende.sHCrates.scenes.ParticleSpec;
 import org.Cry_Legende.sHCrates.crates.config.PreviewGUIConfig;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.Cry_Legende.sHCrates.utils.ItemBuilder;
@@ -341,6 +342,8 @@ public class CrateManager {
         String soundSpin = animSection.getString("SoundSpin", "ENTITY_EXPERIENCE_ORB_PICKUP");
         String soundWin = animSection.getString("SoundWin", "ENTITY_PLAYER_LEVELUP");
         int rerollButtonSlot = animSection.getInt("RerollButtonSlot", 22);
+        // Animation en menu jouée quand une scène ne trouve pas de place (ou pour un joueur Bedrock)
+        String fallback = animSection.getString("Repli", "ROULETTE").toUpperCase(Locale.ROOT);
 
         ConfigurationSection quickCrateSection = animSection.getConfigurationSection("QuickCrateAnimation");
         if (quickCrateSection == null) {
@@ -357,7 +360,31 @@ public class CrateManager {
             quickCrateSection.contains("HauteurDepart") ? quickCrateSection.getDouble("HauteurDepart") : Double.NaN,
             quickCrateSection.getInt("DureeMontee", 0)
         );
-        return new AnimationConfig(type, guiTitle, spinDuration, soundOpen, soundSpin, soundWin, rerollButtonSlot, quickConfig);
+        return new AnimationConfig(type, guiTitle, spinDuration, soundOpen, soundSpin, soundWin, rerollButtonSlot, quickConfig, fallback);
+    }
+
+    /** Essayage du Miroir : Type COMPAGNON, PARTICULE (Particules: [...]) ou TITRE (Titre: "..."). */
+    private TryOn parseTryOn(ConfigurationSection section, String rewardId, String crateDisplayName) {
+        if (section == null) return null;
+        String typeName = section.getString("Type", "");
+        TryOn.Type type;
+        try {
+            type = TryOn.Type.valueOf(typeName.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Récompense " + rewardId + " (" + crateDisplayName + ") : Essayage.Type « " + typeName
+                + " » inconnu (COMPAGNON, PARTICULE ou TITRE).");
+            return null;
+        }
+        List<ParticleSpec> particles = new ArrayList<>();
+        for (String raw : section.getStringList("Particules")) {
+            ParticleSpec spec = ParticleSpec.parse(raw);
+            if (spec == null) {
+                plugin.getLogger().warning("Récompense " + rewardId + " (" + crateDisplayName + ") : particule « " + raw + " » inconnue.");
+            } else {
+                particles.add(spec);
+            }
+        }
+        return new TryOn(type, section.getString("Titre", ""), List.copyOf(particles));
     }
 
     private Reward parseReward(String rewardId, ConfigurationSection rewardConfig, String crateDisplayName) {
@@ -392,6 +419,8 @@ public class CrateManager {
         if (!condition.isBlank()) {
             reward.setCondition(condition);
         }
+        reward.setTryOn(parseTryOn(rewardConfig.getConfigurationSection("Essayage"), rewardId, crateDisplayName));
+        reward.setEquipCommands(rewardConfig.getStringList("Equiper"));
         ItemBuilder itemBuilder = new ItemBuilder(reward.getDisplayItemMaterial(), reward.getDisplayAmount())
             .setName(reward.getDisplayName())
             .setLore(reward.getLore());
