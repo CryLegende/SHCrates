@@ -76,7 +76,6 @@ Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (
 | `/shcrates info <caisse>` | `/shcr` | Nom, bloc, clé, animation, récompenses et blocs posés. | `shcrates.admin.info` |
 | `/shcrates reload` | `/shcr` | Relit `config.yml`, `messages.yml`, `crates/` et `locations.yml`. Un fichier illisible ou une caisse inutilisable annule tout. | `shcrates.admin.reload` |
 | `/shcrates import` | `/shcr` | Mode réseau : copie les clés virtuelles de `playerdata/` dans la base. | `shcrates.admin.import` |
-| `/shcrates equiper <joueur> <commande>` | `/shcr` | Dialogue « Équiper maintenant / Plus tard » : le bouton lance la commande (console, ou le joueur avec `[joueur]` devant). Placée dans les commandes d'une récompense, il montre ce lot et attend la fermeture du menu de l'animation ; rien pendant une ouverture multiple. | `shcrates.admin.equiper` |
 
 Les sous-commandes d'administration marchent depuis la console ; `setblock` et `removeblock` ont besoin du bloc visé par un joueur.
 
@@ -94,7 +93,7 @@ Les sous-commandes d'administration marchent depuis la console ; `setblock` et `
 | `shcrates.removeblock.<caisse>` | Casser le bloc d'une caisse. | `op` |
 | `shcrates.bypass.creative` | Ouvrir une caisse en mode créatif (ne se déduit pas de `shcrates.admin`). | `op` |
 | `shcrates.admin` | Toute l'administration, aperçu et ouverture de toutes les caisses (parent des nœuds suivants). | `op` |
-| `shcrates.admin.givekey` `.takekey` `.giveall` `.setblock` `.removeblock` `.reload` `.import` `.info` `.equiper` | Une sous-commande chacun. | `op` |
+| `shcrates.admin.givekey` `.takekey` `.giveall` `.setblock` `.removeblock` `.reload` `.import` `.info` | Une sous-commande chacun. | `op` |
 | `shcrates.admin.previewothers` `.openothers` `.keysothers` `.statsothers` | Viser un autre joueur avec `preview`, `open`, `keys` ou `stats`. | `op` |
 
 ## Placeholders

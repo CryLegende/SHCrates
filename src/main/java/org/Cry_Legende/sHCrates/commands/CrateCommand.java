@@ -42,7 +42,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
 
     // /crate : fonctions joueur ; /shcrates : administration. Chaque nom accepte toutes les sous-commandes, sous réserve des droits.
     private static final List<String> PLAYER_SUBCOMMANDS = List.of("preview", "open", "openall", "keys", "stats", "list");
-    private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info", "equiper");
+    private static final List<String> ADMIN_SUBCOMMANDS = List.of("givekey", "takekey", "giveall", "setblock", "removeblock", "reload", "import", "info");
 
 
     public CrateCommand(SHCrates plugin) {
@@ -129,9 +129,6 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                 break;
             case "import":
                 handleImportCommand(sender);
-                break;
-            case "equiper":
-                handleEquipCommand(sender, args);
                 break;
             default:
                 handleInfoCommand(sender, args);
@@ -706,24 +703,6 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
         messageManager.sendMessage(player, "crate_block_removed");
     }
 
-    /**
-     * /shcrates equiper <joueur> <commande> : propose au joueur d'équiper ce qu'il vient de recevoir. Faite pour les commandes
-     * d'une récompense (le dialogue montre alors ce lot) ; le bouton « Équiper maintenant » lance la commande.
-     */
-    private void handleEquipCommand(CommandSender sender, String[] args) {
-        if (args.length < 3) {
-            messageManager.sendMessage(sender, "command_usage_equiper");
-            return;
-        }
-        Player target = Bukkit.getPlayerExact(args[1]);
-        if (target == null) {
-            messageManager.sendMessage(sender, "player_not_found", MessageManager.ph("%player%", args[1]));
-            return;
-        }
-        String command = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length));
-        plugin.getEquipDialog().offer(target, command, plugin.getAnimationManager().getRewardBeingGiven(target));
-    }
-
     private void handleReloadCommand(CommandSender sender) {
         if (!admin(sender, "reload")) {
             messageManager.sendMessage(sender, "no_permission");
@@ -744,7 +723,6 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             }
             return;
         }
-        plugin.getEquipDialog().setBlind(plugin.getConfigManager().getBoolean("aveugler-pendant-dialogues", true));
         messageManager.sendMessage(sender, "reload_success");
         messageManager.sendMessage(sender, "reload_network_notice");
     }
@@ -838,11 +816,6 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
                         suggestions.addAll(List.of("1", "5", "10"));
                     } else if (args.length == 4) { // [physical|virtual] ou [p|v]
                         suggestions.addAll(List.of("physical", "virtual", "p", "v"));
-                    }
-                    break;
-                case "equiper":
-                    if (args.length == 2) {
-                        Bukkit.getOnlinePlayers().stream().map(Player::getName).forEach(suggestions::add);
                     }
                     break;
                 case "setblock":

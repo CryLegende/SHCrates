@@ -33,10 +33,6 @@
 #   /shcrates reload                                                 Relit config.yml, messages.yml, crates/ et locations.yml. Un
 #                                                                    fichier illisible ou une caisse inutilisable annule tout.
 #   /shcrates import                                                 Avec SHNetwork : copie les clés virtuelles de playerdata/ dans la base.
-#   /shcrates equiper <joueur> <commande>                            Dialogue « Équiper maintenant / Plus tard » ; le bouton lance la
-#                                                                    commande (console, ou le joueur avec [joueur] devant). Placée dans les
-#                                                                    commandes d'une récompense, le dialogue montre ce lot et attend que le
-#                                                                    menu de l'animation soit fermé.
 #
 # Permissions :
 #   shcrates.use                    Utiliser /crate et les sous-commandes joueur (par défaut : tous les joueurs).
@@ -51,7 +47,7 @@
 #   shcrates.admin                  Toutes les commandes d'administration, et l'aperçu et l'ouverture de toutes les caisses
 #                                   (par défaut : op).
 #   shcrates.admin.<commande>       Une commande d'administration : givekey, takekey, giveall, setblock, removeblock,
-#                                   reload, import, info, equiper.
+#                                   reload, import, info.
 #   shcrates.admin.previewothers    Ouvrir l'aperçu d'un autre joueur.
 #   shcrates.admin.openothers       Ouvrir une caisse pour un autre joueur.
 #   shcrates.admin.keysothers       Voir les clés d'un autre joueur.
@@ -219,9 +215,6 @@ paliers:
     titre: "&6&lLÉGENDAIRE"
     sous-titre: "%reward%"
     annonce: true
-
-# Texte des dialogues sur fond noir : le joueur est aveuglé tant qu'un dialogue de SHCrates est affiché
-aveugler-pendant-dialogues: true
 
 # --- Paramètres de Relance (Reroll) ---
 # Permet aux joueurs de relancer une récompense à la fin d'une animation.

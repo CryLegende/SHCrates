@@ -20,7 +20,7 @@ commands:
     description: Administration de SHCrates (clés, blocs de caisse, rechargement).
     aliases:
       - shcr
-    usage: /shcrates <givekey|takekey|giveall|setblock|removeblock|info|reload|import|equiper>
+    usage: /shcrates <givekey|takekey|giveall|setblock|removeblock|info|reload|import>
   crate:
     description: Aperçu, ouverture et clés des caisses.
     usage: /crate <preview|open|openall|keys|stats|list>
@@ -67,7 +67,6 @@ permissions:
       shcrates.admin.removeblock: true
       shcrates.admin.import: true
       shcrates.admin.info: true
-      shcrates.admin.equiper: true
       shcrates.admin.previewothers: true
       shcrates.admin.openothers: true
       shcrates.admin.keysothers: true
@@ -95,9 +94,6 @@ permissions:
     default: op
   shcrates.admin.info:
     description: Consulter une caisse chargée.
-    default: op
-  shcrates.admin.equiper:
-    description: Proposer à un joueur d'équiper ce qu'il vient de recevoir (/shcrates equiper, pour les commandes des récompenses).
     default: op
   shcrates.admin.previewothers:
     description: Ouvrir l'aperçu d'une caisse pour un autre joueur.
