@@ -12,7 +12,7 @@ public enum SceneKind {
     /** Box Légendaire : un coffre-fort sinistre tombe du ciel, s'éveille, monte de palier en palier puis éjecte le lot. */
     COFFRE_CELESTE("COFFRE_CELESTE", 1.7, 3.2, 4.2),
     /** Box Cosmétique : le reflet du joueur essaie le cosmétique dans un miroir. */
-    MIROIR("MIROIR", 1.25, 3.4, 3.4);
+    MIROIR("MIROIR", 1.25, 3.75, 3.8);
 
     private final String type;
     private final double radius;

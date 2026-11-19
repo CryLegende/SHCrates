@@ -68,17 +68,25 @@ final class VaultScene extends Scene {
     private int endAt;
     private boolean skipped;
     private double orbitAngle;
-    private int nextSwap;
-    private int swapInterval;
-    private int swapCount;
-    private int swapIndex;
+    /** Vitesse de la roue (degrés par cran de 2 ticks), qui diminue à chaque cran. */
+    private double wheelSpeed;
+    /** Objets passés devant le joueur depuis le début de la ronde. */
+    private int passed;
+    /** Objet mis en avant (un peu plus gros) parce qu'il passe devant le joueur, et jusqu'à quand. */
+    private int popIndex = -1;
+    private int popUntil;
     private int climbStep = -1;
 
     VaultScene(SceneManager manager, Player owner, Crate crate, Reward reward, Placement place, boolean test, SceneListener listener) {
         super(manager, owner, crate, reward, place, SceneKind.COFFRE_CELESTE, test, listener);
         this.falls = place.skyHeight() >= 4;
         this.fallFrom = falls ? Math.min(place.skyHeight(), 9) + 1.5 : 0;
-        pool.addAll(showcase(24));
+        // six objets différents sur la roue (le même objet deux fois se lirait comme une erreur)
+        for (ItemStack item : showcase(60)) {
+            if (pool.stream().noneMatch(item::isSimilar)) pool.add(item);
+            if (pool.size() == ORBIT_COUNT) break;
+        }
+        if (pool.isEmpty()) pool.add(reward.getDisplayItemStack().clone());
     }
 
     // ------------------------------------------------------------------ déroulé
@@ -219,9 +227,8 @@ final class VaultScene extends Scene {
             orbit.add(d);
         }
         orbitAngle = 0;
-        swapInterval = 3;
-        nextSwap = orbitAt;
-        swapIndex = 0;
+        wheelSpeed = 52;
+        passed = 0;
     }
 
     private void spreadOrbit() {
@@ -233,26 +240,41 @@ final class VaultScene extends Scene {
     private Transformation orbitTf(int i, double bob) {
         double a = orbitAngle + Math.PI * 2 * i / ORBIT_COUNT;
         Vector3f pos = offset(Math.cos(a) * ORBIT_RADIUS, bob, Math.sin(a) * ORBIT_RADIUS);
-        return itemTf(pos, facing(), (float) (0.68 * s));
+        double size = i == popIndex && t < popUntil ? 0.9 : 0.68;
+        return itemTf(pos, facing(), (float) (size * s));
+    }
+
+    /** Objet le plus proche du joueur : celui dont l'angle est le plus près de l'avant de la scène (z local). */
+    private int frontIndex() {
+        double best = Double.MAX_VALUE;
+        int index = 0;
+        for (int i = 0; i < ORBIT_COUNT; i++) {
+            double a = orbitAngle + Math.PI * 2 * i / ORBIT_COUNT;
+            double d = Math.abs(Math.atan2(Math.sin(a - Math.PI / 2), Math.cos(a - Math.PI / 2)));
+            if (d < best) {
+                best = d;
+                index = i;
+            }
+        }
+        return index;
     }
 
     private void orbitTick(int t) {
-        if ((t - orbitAt) % 3 == 0) {
-            orbitAngle += Math.toRadians(16);
+        if ((t - orbitAt) % 2 == 0) {
+            // roue qui ralentit : chaque objet qui passe devant le joueur grossit un instant, avec un « clic »
+            orbitAngle += Math.toRadians(wheelSpeed);
+            wheelSpeed = Math.max(7, wheelSpeed * 0.92);
+            int now = (int) Math.floor(orbitAngle / (Math.PI * 2 / ORBIT_COUNT));
+            if (now > passed) {
+                passed = now;
+                popIndex = frontIndex();
+                popUntil = t + 3;
+                sound("coffre-cran", "block.note_block.chime", 0.6f, (float) Math.min(2.0, 0.75 + passed * 0.08), 0f);
+            }
             for (int i = 0; i < orbit.size(); i++) {
                 double bob = Math.sin(orbitAngle * 2 + i) * 0.06;
-                move(orbit.get(i), orbitTf(i, bob), 3);
+                move(orbit.get(i), orbitTf(i, bob), 2);
             }
-        }
-        if (t >= nextSwap && t < collapseAt - 4) {
-            // machine à sous : un lot change à chaque cran, de plus en plus lentement
-            ItemDisplay d = orbit.get(swapIndex % orbit.size());
-            d.setItemStack(pool.get((ORBIT_COUNT + swapCount) % pool.size()));
-            swapIndex += 5;
-            swapCount++;
-            sound("coffre-cran", "block.note_block.chime", 0.6f, (float) Math.min(2.0, 0.7 + swapCount * 0.07), 0f);
-            swapInterval = (int) Math.min(9, Math.round(swapInterval * 1.16 + 0.4));
-            nextSwap = t + swapInterval;
         }
         if ((t - orbitAt) % 5 == 0) {
             Location target = at(0, VAULT_CENTER, 0);

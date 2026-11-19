@@ -49,14 +49,14 @@ final class MirrorScene extends Scene {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
     private static final double HALF_WIDTH = 0.78;
-    private static final double FRAME_TOP = 2.22;
+    private static final double FRAME_TOP = 2.45;
     private static final double BAR = 0.11;
     private static final double REFLECTION_Z = -0.5;
-    private static final double REFLECTION_SCALE = 0.88;
-    private static final double REEL_Y = 2.95;
+    private static final double REFLECTION_SCALE = 0.84;
+    private static final double REEL_Y = 3.2;
     private static final double[] REEL_X = {-0.72, 0, 0.72};
-    private static final float REEL_CENTER = 0.62f;
-    private static final float REEL_SIDE = 0.38f;
+    private static final float REEL_CENTER = 0.55f;
+    private static final float REEL_SIDE = 0.42f;
 
     private final List<BlockDisplay> frame = new ArrayList<>();
     private final List<Transformation> frameFinal = new ArrayList<>();
@@ -93,7 +93,7 @@ final class MirrorScene extends Scene {
     MirrorScene(SceneManager manager, Player owner, Crate crate, Reward reward, Placement place, boolean test, SceneListener listener) {
         super(manager, owner, crate, reward, place, SceneKind.MIROIR, test, listener);
         // le défilé se termine sur le lot gagné, au centre
-        totalSwaps = 10;
+        totalSwaps = 8;
         sequence.addAll(showcase(totalSwaps + 2));
         ItemStack won = reward.getDisplayItemStack().clone();
         won.setAmount(1);
@@ -106,14 +106,15 @@ final class MirrorScene extends Scene {
     protected void onStart() {
         appearAt = 18;
         reelAt = 24;
-        swapInterval = 3;
-        nextSwap = reelAt + 6;
+        // premier cran une fois les objets apparus (ils grandissent de SETTLE à SETTLE + 5)
+        swapInterval = 5;
+        nextSwap = reelAt + SETTLE + 8;
         // le défilé dure jusqu'au dernier cran, la montée commence juste après
         int last = nextSwap;
         int interval = swapInterval;
         for (int i = 0; i < totalSwaps; i++) {
             last += interval;
-            interval = (int) Math.min(8, Math.round(interval * 1.15 + 0.4));
+            interval = (int) Math.min(10, Math.round(interval * 1.12 + 0.4));
         }
         climbAt = last + 6;
         int steps = Math.max(1, ladder.size());
@@ -139,7 +140,7 @@ final class MirrorScene extends Scene {
         String labelText = plugin.getMessageManager().getRawPrefixedMessage("scene_spectator_label",
             MessageManager.ph("%player_name%", owner.getName(), "%crate_display_name%", crate.getDisplayName()));
         if (!labelText.isEmpty()) {
-            label = spawn(at(0, 3.38, 0), TextDisplay.class, Audience.SPECTATORS, td -> {
+            label = spawn(at(0, 3.62, 0), TextDisplay.class, Audience.SPECTATORS, td -> {
                 td.text(LEGACY.deserialize(labelText));
                 td.setBillboard(Display.Billboard.CENTER);
                 td.setShadowed(true);
@@ -333,7 +334,8 @@ final class MirrorScene extends Scene {
     /** Un cran du défilé : tout glisse d'une place vers la gauche, un nouveau cosmétique arrive à droite. */
     private void swap(int t) {
         if (reel[0] == null) return;
-        int dur = Math.min(4, swapInterval);
+        // glissement sur tout l'intervalle : le défilé avance sans à-coups et ralentit
+        int dur = Math.max(3, swapInterval);
         ItemDisplay leaving = reel[0];
         slide(leaving, REEL_X[0] - (REEL_X[1] - REEL_X[0]), 0.01f, dur);
         Bukkit.getScheduler().runTaskLater(plugin, () -> remove(leaving), dur + 1L);
@@ -353,7 +355,7 @@ final class MirrorScene extends Scene {
         reel[2] = incoming;
         swaps++;
         sound("miroir-cran", "block.note_block.bell", 0.55f, (float) Math.min(2.0, 0.75 + swaps * 0.06), 0f);
-        swapInterval = (int) Math.min(8, Math.round(swapInterval * 1.15 + 0.4));
+        swapInterval = (int) Math.min(10, Math.round(swapInterval * 1.12 + 0.4));
         nextSwap = t + swapInterval;
     }
 
@@ -458,18 +460,20 @@ final class MirrorScene extends Scene {
             Quaternionf spin = facing().rotateY((float) Math.toRadians(120 * ((t - tryOnAt) / 10)));
             move(floating, new Transformation(new Vector3f(), spin, new Vector3f((float) (0.6 * s)), new Quaternionf()), 10);
         }
-        if (tryOn != null && tryOn.type() == TryOn.Type.PARTICULE && !tryOn.particles().isEmpty() && t % 2 == 0) {
+        if (tryOn != null && tryOn.type() == TryOn.Type.PARTICULE && !tryOn.particles().isEmpty() && t % 3 == 0) {
             List<ParticleSpec> specs = tryOn.particles();
-            double head = 1.75 * REFLECTION_SCALE;
+            // tête du reflet : le halo tourne autour d'elle, le rappel juste au-dessus, loin du haut du cadre que
+            // les particules qui montent atteindraient sinon (elles y seraient cachées)
+            double head = 1.62 * REFLECTION_SCALE;
             double a = (t - tryOnAt) * 0.35;
-            // halo qui tourne autour de la tête, et rappel au-dessus d'elle
-            Location p1 = at(Math.cos(a) * 0.45, head, REFLECTION_Z + Math.sin(a) * 0.45);
-            Location p2 = at(Math.cos(a + Math.PI) * 0.45, head, REFLECTION_Z + Math.sin(a + Math.PI) * 0.45);
-            Location over = at(0, head + 0.45, REFLECTION_Z);
+            double z = REFLECTION_Z + 0.12;
+            Location p1 = at(Math.cos(a) * 0.58, head, z + Math.sin(a) * 0.3);
+            Location p2 = at(Math.cos(a + Math.PI) * 0.58, head, z + Math.sin(a + Math.PI) * 0.3);
+            Location over = at(0, head + 0.32, z);
             for (Player viewer : viewersOnline()) {
                 specs.get(0).spawn(viewer, p1, 1, 0.02, 0, t, 0);
                 specs.get(specs.size() > 1 ? 1 : 0).spawn(viewer, p2, 1, 0.02, 0, t, 1);
-                if (t % 6 == 0) specs.get(0).spawn(viewer, over, 1, 0.05, 0, t, 2);
+                if (t % 9 == 0) specs.get(0).spawn(viewer, over, 1, 0.05, 0, t, 2);
             }
         }
     }
