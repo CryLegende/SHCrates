@@ -125,10 +125,13 @@ public class QuickCrateAnimation implements Animation {
                         id.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GROUND);
                         id.setBillboard(Display.Billboard.FIXED);
                         id.setPersistent(false);
+                        // vu du seul joueur qui ouvre, comme l'animation de son coffre
+                        id.setVisibleByDefault(false);
                         // le client glisse d'une pose à la suivante : rotation et montée sans à-coups
                         id.setInterpolationDuration(1);
                         id.setTransformation(pose(fromY, 0));
                     });
+                    player.showEntity(plugin, itemDisplay);
                     plugin.getAnimationManager().addDisplayEntity(blockKeyLocation, itemDisplay);
                 }
                 if (shownFor == riseTicks && quickConfig.isDisplayHologram()) {
@@ -138,10 +141,12 @@ public class QuickCrateAnimation implements Animation {
                         td.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
                         td.setShadowed(true);
                         td.setPersistent(false);
+                        td.setVisibleByDefault(false);
                         td.setTransformation(new Transformation(
                             new Vector3f(0, (float) (toY + quickConfig.getHologramHeightOffset()), 0),
                             new Quaternionf(), new Vector3f(1.0f, 1.0f, 1.0f), new Quaternionf()));
                     });
+                    player.showEntity(plugin, nameDisplay);
                     plugin.getAnimationManager().addDisplayEntity(blockKeyLocation, nameDisplay);
                 }
                 if (shownFor > 0 && itemDisplay != null) {
