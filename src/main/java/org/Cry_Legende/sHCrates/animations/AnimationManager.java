@@ -61,6 +61,8 @@ public class AnimationManager {
     private final Set<UUID> bulkOpening = new HashSet<>();
     // Garantie d'une ouverture QuickCrate, dévoilée à la fin de son hologramme
     private final Map<UUID, Guarantee> pendingQuickGuarantee = new HashMap<>();
+    // Lot dont les commandes sont en train d'être lancées, par joueur
+    private final Map<UUID, Reward> givingReward = new HashMap<>();
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
     /** Garantie appliquée à un tirage : aucune, première clé du joueur, ou jauge pleine. */
@@ -93,6 +95,11 @@ public class AnimationManager {
     public Optional<Animation> getAnimation(String name) {
         if (name == null) return Optional.empty();
         return Optional.ofNullable(registeredAnimations.get(name.toUpperCase()));
+    }
+
+    /** Lot dont les commandes sont en train d'être lancées pour ce joueur, ou null. */
+    public Reward getRewardBeingGiven(Player player) {
+        return givingReward.get(player.getUniqueId());
     }
 
     public boolean isPlayerInAnimation(Player player) {
@@ -681,8 +688,14 @@ public class AnimationManager {
                 messageManager.sendMessage(player, "crate_opened", MessageManager.ph("%crate_display_name%", crate.getDisplayName(),
                     "%reward_display_name%", reward.getDisplayName(), "%tier%", tier == null ? "" : tier.name()));
             }
-            for (String cmd : reward.getCommands()) {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), Papi.apply(player, cmd.replace("%player_name%", player.getName())));
+            // les commandes du lot savent quel lot est donné (/shcrates equiper le montre dans son dialogue)
+            givingReward.put(player.getUniqueId(), reward);
+            try {
+                for (String cmd : reward.getCommands()) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), Papi.apply(player, cmd.replace("%player_name%", player.getName())));
+                }
+            } finally {
+                givingReward.remove(player.getUniqueId());
             }
             if (!quiet) {
                 for (String msg : reward.getMessages()) {

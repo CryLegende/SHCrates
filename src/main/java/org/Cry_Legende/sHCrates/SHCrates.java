@@ -6,6 +6,7 @@ import org.Cry_Legende.sHCrates.config.ConfigManager;
 import org.Cry_Legende.sHCrates.config.CrateConfigManager;
 import org.Cry_Legende.sHCrates.config.MessageManager;
 import org.Cry_Legende.sHCrates.crates.CrateManager;
+import org.Cry_Legende.sHCrates.dialogs.EquipDialog;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
 import org.Cry_Legende.sHCrates.listeners.BlockBreakListener;
 import org.Cry_Legende.sHCrates.listeners.InventoryClickListener;
@@ -38,6 +39,8 @@ public final class SHCrates extends JavaPlugin {
     private GUIManager guiManager;
     private AnimationManager animationManager;
     private PlayerDataManager playerDataManager;
+    // Dialogue « Équiper maintenant » ouvert par /shcrates equiper
+    private EquipDialog equipDialog;
     // Non nul seulement avec SHNetwork : clés virtuelles dans la base partagée
     private NetworkKeys network;
 
@@ -62,6 +65,7 @@ public final class SHCrates extends JavaPlugin {
         this.crateManager = new CrateManager(this);
         this.guiManager = new GUIManager(this);
         this.animationManager = new AnimationManager(this);
+        this.equipDialog = new EquipDialog(this, configManager.getBoolean("aveugler-pendant-dialogues", true));
 
         // Charger les données des crates (y compris les emplacements physiques et les types de crates)
         this.crateManager.loadCrates(); // Cela va charger les .yml de crates/ et les emplacements
@@ -95,6 +99,11 @@ public final class SHCrates extends JavaPlugin {
         // aucune tâche ne peut plus être planifiée, les récompenses sont donc données tout de suite.
         if (animationManager != null) {
             animationManager.finishAllAnimations();
+        }
+
+        // Vue rendue aux joueurs devant un dialogue
+        if (equipDialog != null) {
+            equipDialog.shutdown();
         }
 
         // --- CORRECTION 4 : APPEL AU NETTOYAGE GLOBAL ---
@@ -203,6 +212,10 @@ public final class SHCrates extends JavaPlugin {
 
     public AnimationManager getAnimationManager() {
         return animationManager;
+    }
+
+    public EquipDialog getEquipDialog() {
+        return equipDialog;
     }
 
     public PlayerDataManager getPlayerDataManager() {

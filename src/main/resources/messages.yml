@@ -210,3 +210,15 @@ stats_gauge_line: "&8   %gauge_name% &7: &e%current%&7/&e%threshold%"
 stats_collection_line: "&8   &7Collection : &d%owned%&7/&d%total%"
 stats_no_best: "&8-"
 stats_empty: "&7&l« &e&lSH &8&l» &e%player% &7n'a encore ouvert aucune box."
+
+# --- Dialogue « Équiper maintenant » (/shcrates equiper) ---
+# Première ligne du titre des dialogues
+dialog_title: "&7&l« &d&lSkyHand &8&l»"
+dialog_equip_title: "&fNouveau cosmétique !"
+# Avec le lot qui vient d'être donné (%reward_display_name%)
+dialog_equip_text: "&7%reward_display_name% &7est à vous. Équipez-le tout de suite, ou plus tard avec &f/cosmetiques&7."
+# Sans lot connu (commande lancée hors d'une récompense)
+dialog_equip_text_generic: "&7Équipez-le tout de suite, ou plus tard avec &f/cosmetiques&7."
+dialog_equip_now: "&aÉquiper maintenant"
+dialog_equip_later: "&7Plus tard"
+command_usage_equiper: "&7&l« &e&lSH &8&l» &7Tapez &e/shcrates equiper <joueur> <commande>&7."
