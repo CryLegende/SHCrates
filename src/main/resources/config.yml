@@ -62,6 +62,8 @@
 # Clés propres à chaque caisse (fichiers de crates/) :
 #   OuvertureMultiple: false        Refuse /crate openall et le Shift+clic : une clé à la fois (par défaut : true).
 #   Relance: false                  Pas de relance pour cette caisse, même avec shcrates.reroll.* (par défaut : true).
+#   MessageGain: "..."              Message de gain de cette caisse à la place de crate_opened (messages.yml) :
+#                                   %crate_display_name%, %reward_display_name%, %tier%, %player_name%.
 #   AnnonceReception: true          Message (key_received_announce), son (son_cle_recue) et état de la jauge quand le
 #                                   joueur reçoit des clés de cette caisse (par défaut : false).
 #   PremiereOuverture: tres_rare    La toute première clé ouverte par un joueur tire seulement parmi les lots de ce

@@ -46,6 +46,8 @@ public class Crate {
     private boolean openAllAllowed = true;
     // Relance possible pour cette caisse (Relance: false la retire, même aux joueurs qui ont shcrates.reroll.*)
     private boolean rerollAllowed = true;
+    // Message de gain propre à la caisse (MessageGain), null : message crate_opened de messages.yml
+    private String winMessage;
     // Message et son quand le joueur reçoit des clés de cette caisse
     private boolean announceReception = false;
     // Lots en rotation : un seul est gagnable chaque mois, à tour de rôle depuis rotationStart
@@ -240,6 +242,14 @@ public class Crate {
 
     public void setFirstOpenMinTier(String firstOpenMinTier) {
         this.firstOpenMinTier = firstOpenMinTier;
+    }
+
+    public String getWinMessage() {
+        return winMessage;
+    }
+
+    public void setWinMessage(String winMessage) {
+        this.winMessage = winMessage == null || winMessage.isBlank() ? null : winMessage;
     }
 
     public boolean isRerollAllowed() {

@@ -184,6 +184,7 @@ public class CrateManager {
     private void parseProgression(String id, FileConfiguration config, Crate crate) {
         crate.setOpenAllAllowed(config.getBoolean("OuvertureMultiple", true));
         crate.setRerollAllowed(config.getBoolean("Relance", true));
+        crate.setWinMessage(config.getString("MessageGain"));
         crate.setAnnounceReception(config.getBoolean("AnnonceReception", false));
 
         ConfigurationSection gaugeSection = config.getConfigurationSection("Jauge");

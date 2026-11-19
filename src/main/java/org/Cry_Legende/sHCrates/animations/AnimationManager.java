@@ -763,8 +763,17 @@ public class AnimationManager {
         Runnable give = () -> {
             Tier tier = tierOf(reward);
             if (!quiet) {
-                messageManager.sendMessage(player, "crate_opened", MessageManager.ph("%crate_display_name%", crate.getDisplayName(),
-                    "%reward_display_name%", reward.getDisplayName(), "%tier%", tier == null ? "" : tier.name()));
+                if (crate.getWinMessage() != null) {
+                    // MessageGain de la caisse (une box sans article : butin d'un boss, voucher...)
+                    player.sendMessage(ChatUtils.colorize(crate.getWinMessage()
+                        .replace("%crate_display_name%", crate.getDisplayName())
+                        .replace("%reward_display_name%", reward.getDisplayName())
+                        .replace("%tier%", tier == null ? "" : tier.name())
+                        .replace("%player_name%", player.getName())));
+                } else {
+                    messageManager.sendMessage(player, "crate_opened", MessageManager.ph("%crate_display_name%", crate.getDisplayName(),
+                        "%reward_display_name%", reward.getDisplayName(), "%tier%", tier == null ? "" : tier.name()));
+                }
             }
             for (String cmd : reward.getCommands()) {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), Papi.apply(player, cmd.replace("%player_name%", player.getName())));
