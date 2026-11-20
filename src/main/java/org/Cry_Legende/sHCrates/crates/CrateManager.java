@@ -111,14 +111,13 @@ public class CrateManager {
                 Crate crate = buildCrate(crateId, config);
                 if (crate != null) {
                     loadedCrates.put(crateId.toLowerCase(), crate);
-                    plugin.getLogger().info("Successfully loaded crate: " + crate.getDisplayName() + " (ID: " + crateId + ")");
                 }
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Error parsing crate file: " + crateFile.getName(), e);
             }
         }
         loadCrateLocations();
-        plugin.getLogger().info("Loaded " + loadedCrates.size() + " crate types.");
+        plugin.getLogger().info(loadedCrates.size() + " caisse(s) chargée(s) : " + String.join(", ", loadedCrates.keySet()) + ".");
     }
 
     /** Construit une caisse depuis son fichier (identifiant interne généré et réécrit s'il manque), sans l'enregistrer. */

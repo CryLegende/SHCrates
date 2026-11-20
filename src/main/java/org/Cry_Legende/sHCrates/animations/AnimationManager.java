@@ -95,7 +95,6 @@ public class AnimationManager {
 
     public void registerAnimation(Animation animation) {
         registeredAnimations.put(animation.getName().toUpperCase(), animation);
-        plugin.getLogger().info("Registered animation type: " + animation.getName());
     }
 
     public Optional<Animation> getAnimation(String name) {
@@ -967,7 +966,6 @@ public class AnimationManager {
         if (activeDisplayEntities.isEmpty()) {
             return;
         }
-        plugin.getLogger().info("Cleaning up all active display entities...");
         int count = 0;
         // Itérer sur une copie des valeurs pour éviter ConcurrentModificationException
         for (List<Entity> entityList : new ArrayList<>(activeDisplayEntities.values())) {

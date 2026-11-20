@@ -8,6 +8,7 @@ import org.Cry_Legende.sHCrates.gui.GUIManager;
 import org.Cry_Legende.sHCrates.network.NetworkKeys;
 import org.Cry_Legende.sHCrates.network.NetworkLink;
 import org.Cry_Legende.sHCrates.storage.PlayerDataManager;
+import org.Cry_Legende.sHCrates.utils.ActionLog;
 import org.Cry_Legende.sHCrates.utils.ChatUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -452,6 +453,12 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             }
         }
         crateManager.giveKey(targetPlayer, crate.getId(), amount, physical);
+        ActionLog.write(plugin, "cles", targetPlayer.getName() + " : +" + amount + " clé(s) " + (physical ? "physique(s) " : "virtuelle(s) ")
+            + org.bukkit.ChatColor.stripColor(crate.getDisplayName()) + " (par " + sender.getName() + ")");
+        // La console (votes, site, menus, quêtes) en donne des centaines par jour : la trace est dans SHLogs (cles)
+        if (sender instanceof org.bukkit.command.ConsoleCommandSender || sender instanceof org.bukkit.command.RemoteConsoleCommandSender) {
+            return;
+        }
         String messageKey = physical ? "key_given_physical_sender" : "key_given_virtual_sender";
         messageManager.sendMessage(sender, messageKey, MessageManager.ph(
             "%amount%", String.valueOf(amount),

@@ -86,12 +86,10 @@ public final class SHCrates extends JavaPlugin {
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new SHCratesExpansion(this).register();
             placeholderApiHooked = true;
-            getLogger().info("Successfully hooked into PlaceholderAPI!");
         } else {
             getLogger().warning("PlaceholderAPI not found. Some placeholder features will be disabled.");
         }
 
-        getLogger().info("SHCrates v" + getDescription().getVersion() + " has been enabled successfully!");
         if (configManager.isDebugMode()) {
             getLogger().log(Level.INFO, "[DEBUG] SHCrates is running in debug mode.");
         }
@@ -138,7 +136,6 @@ public final class SHCrates extends JavaPlugin {
             network.stop();
         }
 
-        getLogger().info("SHCrates v" + getDescription().getVersion() + " has been disabled.");
     }
 
     /**

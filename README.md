@@ -85,7 +85,7 @@ Sans SHNetwork, ou sans les clés `reseau` dans la configuration, le plugin se c
 
 ## Logs
 
-Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (`LogFile` dans le fichier de la caisse, par défaut le nom du fichier). Le texte de la ligne se règle avec `reward_log_format`. Sans SHLogs, la ligne est écrite dans la console.
+Chaque récompense gagnée est écrite dans SHLogs, avec un fichier par caisse (`LogFile` dans le fichier de la caisse, par défaut le nom du fichier). Le texte de la ligne se règle avec `reward_log_format`. Sans SHLogs, la ligne est écrite dans la console. Chaque don de clés (`givekey`) est noté dans le fichier `cles` ; depuis la console, `givekey` ne répond qu'en cas d'erreur (les votes, le site et les quêtes en lancent des centaines par jour). `log_rewards_to_console: true` recopie aussi les gains dans la console.
 
 ## Commandes
 

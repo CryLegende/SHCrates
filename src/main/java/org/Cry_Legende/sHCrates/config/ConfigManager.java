@@ -84,8 +84,6 @@ public class ConfigManager {
         if (!configFile.exists()) {
             plugin.getLogger().info("config.yml not found, creating a new one...");
             plugin.saveDefaultConfig();
-        } else {
-            plugin.getLogger().info("Loading config.yml...");
         }
 
         apply(YamlConfiguration.loadConfiguration(configFile));
@@ -118,7 +116,7 @@ public class ConfigManager {
         knockbackOnNoKey = config.getBoolean("knockback_on_no_key.enabled", true);
         knockbackStrength = config.getDouble("knockback_on_no_key.strength", 0.5);
 
-        logRewardsToConsole = config.getBoolean("log_rewards_to_console", true);
+        logRewardsToConsole = config.getBoolean("log_rewards_to_console", false);
         rewardLogFormat = config.getString("reward_log_format", "%player_name% gagne %reward_name%");
         openAllDelayTicks = config.getInt("open_all_delay_ticks", 2);
         autoCloseGUIDelaySeconds = config.getInt("auto_close_gui_delay_seconds", 7);

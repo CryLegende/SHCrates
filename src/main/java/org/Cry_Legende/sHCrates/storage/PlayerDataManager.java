@@ -160,14 +160,12 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
     }
 
     public void saveAllPlayerData() {
-        plugin.getLogger().info("Saving all cached player data...");
         // Note: PlayerQuitEvent gère déjà la sauvegarde des joueurs qui se déconnectent.
         // Ceci est pour un arrêt de serveur ou un reload.
         for (UUID uuid : playerDataCache.keySet()) {
             savePlayerData(uuid);
         }
         playerDataCache.clear(); // Vider le cache après sauvegarde
-        plugin.getLogger().info("All cached player data saved.");
     }
 
     public void loadAllPlayerData() {
@@ -178,7 +176,6 @@ public class PlayerDataManager implements Listener { // Implémente Listener pou
         for (Player player : Bukkit.getOnlinePlayers()) {
             loadPlayerData(player.getUniqueId());
         }
-        plugin.getLogger().info("Initial player data loaded for online players.");
     }
 
     public void saveAndReloadAllPlayerData() {

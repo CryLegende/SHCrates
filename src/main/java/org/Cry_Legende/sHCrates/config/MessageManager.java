@@ -44,8 +44,6 @@ public class MessageManager {
         if (!messagesFile.exists()) {
             plugin.getLogger().info("messages.yml not found, creating a new one...");
             plugin.saveResource("messages.yml", true); // Force overwrite to ensure defaults
-        } else {
-            plugin.getLogger().info("Loading messages.yml...");
         }
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
         addMissingFromJar();
