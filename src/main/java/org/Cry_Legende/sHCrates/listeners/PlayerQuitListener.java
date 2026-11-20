@@ -32,5 +32,7 @@ public class PlayerQuitListener implements Listener {
         }
         // Ouvertures sans clé (/shcrates forceopen) encore en attente : données tout de suite
         animationManager.flushForcedOpenings(player);
+        // Ouverture à plusieurs tirages (piñata de la VoteParty) : les lots pas encore arrivés sont donnés
+        animationManager.flushMultiOpening(player);
     }
 }

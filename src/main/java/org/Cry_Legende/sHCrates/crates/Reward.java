@@ -30,6 +30,8 @@ public class Reward {
     private String condition;
     // Miroir : ce que le reflet essaie (null : l'objet flotte devant lui)
     private TryOn tryOn;
+    /** Tirage perdant (option Vide) : rien n'est montré ni annoncé, ses commandes éventuelles passent quand même. */
+    private boolean empty;
     // Commandes du bouton « Équiper maintenant » du dialogue de fin ([joueur] devant : lancée par le joueur)
 
     public Reward(String id, boolean displayInPreview, String displayName, Material displayItemMaterial, String playerSkinTexture,
@@ -136,6 +138,14 @@ public class Reward {
 
     public String getCondition() {
         return condition;
+    }
+
+    public boolean isEmpty() {
+        return empty;
+    }
+
+    public void setEmpty(boolean empty) {
+        this.empty = empty;
     }
 
     public TryOn getTryOn() {

@@ -48,6 +48,8 @@ public class Crate {
     private boolean rerollAllowed = true;
     // Message de gain propre à la caisse (MessageGain), null : message crate_opened de messages.yml
     private String winMessage;
+    /** Lots tirés par ouverture (option Tirages) ; au-delà de 1, l'animation de la caisse doit les montrer tous (PINATA). */
+    private int draws = 1;
     // Message et son quand le joueur reçoit des clés de cette caisse
     private boolean announceReception = false;
     // Lots en rotation : un seul est gagnable chaque mois, à tour de rôle depuis rotationStart
@@ -242,6 +244,14 @@ public class Crate {
 
     public void setFirstOpenMinTier(String firstOpenMinTier) {
         this.firstOpenMinTier = firstOpenMinTier;
+    }
+
+    public int getDraws() {
+        return draws;
+    }
+
+    public void setDraws(int draws) {
+        this.draws = Math.max(1, Math.min(27, draws));
     }
 
     public String getWinMessage() {

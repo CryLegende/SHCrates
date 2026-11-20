@@ -159,7 +159,21 @@ public final class SceneManager implements Listener {
         Scene scene = switch (kind) {
             case COFFRE_CELESTE -> new VaultScene(this, owner, crate, reward, placement, test, listener);
             case MIROIR -> new MirrorScene(this, owner, crate, reward, placement, test, listener);
+            case PINATA -> new PinataScene(this, owner, crate, reward == null ? List.of() : List.of(reward), placement, test, listener);
         };
+        return begin(owner, scene, placement, kind);
+    }
+
+    /**
+     * Démarre la scène d'une ouverture à plusieurs tirages ({@link SceneKind#multi()}) : tous les lots dans la même scène,
+     * dans l'ordre de la liste (du plus courant au plus rare). Chaque lot est donné par {@link MultiSceneListener#onCollect}.
+     */
+    public Scene playMulti(Player owner, Crate crate, List<Reward> rewards, Placement placement, SceneKind kind, boolean test, MultiSceneListener listener) {
+        abort(owner);
+        return begin(owner, new PinataScene(this, owner, crate, rewards, placement, test, listener), placement, kind);
+    }
+
+    private Scene begin(Player owner, Scene scene, Placement placement, SceneKind kind) {
         scenes.add(scene);
         byOwner.put(owner.getUniqueId(), scene);
         if (placement.turnCamera() && settings().turnCamera()) {

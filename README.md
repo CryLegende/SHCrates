@@ -31,6 +31,7 @@ Utilisé sur : **Opale**.
 - **Relance par caisse** : `Relance: false` retire la relance d'une caisse, même aux joueurs qui ont `shcrates.reroll.*`.
 - **Message de gain par caisse** : `MessageGain` remplace le message `crate_opened` pour cette caisse (`%crate_display_name%`, `%reward_display_name%`, `%tier%`, `%player_name%`), par exemple pour une caisse ouverte par un voucher ou un boss, qui n'est pas « une box ».
 - **Ouverture sur le bloc** (`Bloc:` d'une caisse) : `Commandes` lancées par la console quand la caisse est ouverte sur son bloc (`%player%`, `%world%`, `%x%`, `%y%`, `%z%`, `%crate%`, PlaceholderAPI), par exemple `bdc animation play %player% ouverture %x% %y% %z% %world%` pour animer un coffre BlockDisplayCreator posé sur le bloc, et `DelaiMenu` ticks d'attente avant l'animation de la caisse pour le voir s'ouvrir. Une QuickCrate peut faire sortir son lot du coffre (`DelaiApparition`, `HauteurDepart`, `DureeMontee`).
+- **Plusieurs tirages par ouverture** (`Tirages: 7`) : une ouverture tire autant de lots, montrés tous ensemble par une seule scène (`PINATA`), chacun donné avec le `MessageGain` de la caisse quand il rejoint le joueur. Un lot `Vide: true` est un tirage perdant : ni montré, ni annoncé (ses commandes éventuelles passent). Sans place pour la scène, ou pour un joueur Bedrock, tous les lots sont donnés tout de suite. Une déconnexion pendant la scène donne ceux qui restent.
 - **Réception de clés** (`AnnonceReception: true`) : message, son et état de la jauge quand le joueur reçoit des clés de la caisse.
 - Une animation en GUI donne le lot dès la fin du défilement quand le joueur ne peut pas le relancer ; avec une relance possible, il est donné à la fermeture, une fois le choix fait.
 
@@ -38,10 +39,11 @@ Les compteurs (jauge, clés ouvertes, première clé, meilleur palier) sont rang
 
 ## Scènes d'ouverture
 
-Deux animations se jouent dans le monde, devant le joueur, au lieu d'un menu (`Animation.Type` d'une caisse) :
+Trois animations se jouent dans le monde, devant le joueur, au lieu d'un menu (`Animation.Type` d'une caisse) :
 
 - **COFFRE_CELESTE** (Box Légendaire, environ 9 s) : un coffre-fort sinistre (vault ominous) tombe du ciel dans une traînée de feu d'âme, ou apparaît sur place sous un plafond. Il s'éveille, six lots de la box tournent autour de lui comme une machine à sous qui ralentit, puis sont aspirés. Son contour monte de palier en palier (couleur de chaque palier) jusqu'à celui du lot, il s'ouvre et éjecte le lot, qui flotte avec son nom et son palier. Le titre du palier s'affiche quand la scène s'efface.
 - **MIROIR** (Box Cosmétique, environ 8 s) : un miroir doré se forme ; dedans, le reflet du joueur (entité Mannequin avec son skin et son pseudo) suit son regard et ses coups de bras. Des cosmétiques défilent au-dessus, le cadre monte de palier en palier, puis le cosmétique gagné entre dans le miroir et le reflet l'essaie (`Essayage` du lot) : titre devant son pseudo, compagnon sur l'épaule, ou particules autour de lui. Le miroir éclate. Proposer d'équiper le cosmétique gagné passe par les commandes du lot (un dialogue SHDialogs `shdialogs open nouveau-compagnon …`, par exemple).
+- **PINATA** (Coffre de VoteParty, une caisse à plusieurs `Tirages`, 10 à 15 s) : un lama-piñata en papier crépon descend du ciel sous trois ballons (ou grandit sur place sous un plafond) et se balance. Le joueur le frappe (clic gauche en le visant, la barre d'action le rappelle) : il part en arrière et revient ; au troisième coup, en s'accroupissant, ou seul au bout de 6 s, il éclate en morceaux sous une pluie de confettis et les ballons s'envolent. Les lots en jaillissent l'un après l'autre et retombent en arc devant le joueur, du plus courant au plus rare (le meilleur au milieu, en dernier), avec leur quantité dessous et le nom du lot regardé au-dessus (pour le joueur seul). Puis ils filent vers lui un par un et lui sont donnés. Le modèle est fait dans Blockbench en têtes de joueur (`scenes/pinata.yml` du jar, écrit par `_tools/voteparty/construire.mjs` depuis `pinata.mjs`).
 
 Règles communes :
 

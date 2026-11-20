@@ -217,6 +217,8 @@ stats_empty: "&7&l« &e&lSH &8&l» &e%player% &7n'a encore ouvert aucune box."
 # --- Scènes d'ouverture (Box Légendaire, Box Cosmétique) ---
 # Barre d'action au début d'une scène
 scene_skip_hint: "&7Accroupissez-vous pour passer l'animation"
+# Piñata de la VoteParty, barre d'action en attendant les coups (%hits% coups donnés sur %needed%)
+scene_pinata_hint: "&d&lFrappe la piñata ! &7(clic gauche, %hits%/%needed%) &8· &7Accroupis-toi pour passer"
 # Au-dessus de la scène, pour les joueurs autour (%player_name%, %crate_display_name%) ; "" : rien
 scene_spectator_label: "%crate_display_name% &7de &f%player_name%"
 # Dialogues de fin : première ligne du titre, puis les textes (%reward_display_name%)

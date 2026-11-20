@@ -12,6 +12,9 @@ import org.Cry_Legende.sHCrates.utils.SoundUtils;
 import org.Cry_Legende.sHCrates.scenes.ItemTotem;
 import org.Cry_Legende.sHCrates.scenes.Scene;
 import org.Cry_Legende.sHCrates.scenes.SceneKind;
+import org.Cry_Legende.sHCrates.scenes.MultiSceneListener;
+import org.Cry_Legende.sHCrates.scenes.Placement;
+import org.Cry_Legende.sHCrates.scenes.SceneManager;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
 import org.Cry_Legende.sHCrates.gui.GUIManager;
@@ -67,6 +70,8 @@ public class AnimationManager {
     // Ouvertures sans clé en attente (/shcrates forceopen), jouées l'une après l'autre, par joueur
     private final Map<UUID, java.util.ArrayDeque<String>> forcedOpenings = new HashMap<>();
     private org.bukkit.scheduler.BukkitTask forcedTask;
+    // Ouvertures à plusieurs tirages en cours (option Tirages) : lots montrés par une seule scène, donnés un par un
+    private final Map<UUID, MultiOpening> multiOpenings = new HashMap<>();
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
     /** Garantie appliquée à un tirage : aucune, première clé du joueur, ou jauge pleine. */
@@ -91,6 +96,7 @@ public class AnimationManager {
         registerAnimation(new WheelAnimation(plugin));
         registerAnimation(new SceneAnimation(plugin, SceneKind.COFFRE_CELESTE));
         registerAnimation(new SceneAnimation(plugin, SceneKind.MIROIR));
+        registerAnimation(new SceneAnimation(plugin, SceneKind.PINATA));
     }
 
     public void registerAnimation(Animation animation) {
@@ -106,9 +112,9 @@ public class AnimationManager {
         return activeAnimations.containsKey(player.getUniqueId());
     }
 
-    /** Vrai pendant une ouverture multiple du joueur. */
+    /** Vrai pendant une ouverture multiple du joueur, ou une ouverture à plusieurs tirages pas encore toute donnée. */
     public boolean isBulkOpening(Player player) {
-        return bulkOpening.contains(player.getUniqueId());
+        return bulkOpening.contains(player.getUniqueId()) || multiOpenings.containsKey(player.getUniqueId());
     }
 
     public ActiveAnimationInfo getActiveAnimationInfo(Player player) {
@@ -147,6 +153,19 @@ public class AnimationManager {
                 knockback.setY(0.2);
                 player.setVelocity(knockback);
             }
+            return false;
+        }
+
+        if (crate.getDraws() > 1) {
+            if (usedPhysicalKey)
+                messageManager.sendMessage(player, "key_used_physical", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
+            if (usedVirtualKey)
+                messageManager.sendMessage(player, "key_used_virtual", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
+            if (startMultiOpening(player, crate)) {
+                return true;
+            }
+            playerDataManager.addVirtualKeys(player.getUniqueId(), crate.getInternalID(), 1);
+            messageManager.sendMessage(player, "key_refunded_virtual");
             return false;
         }
 
@@ -762,17 +781,7 @@ public class AnimationManager {
         Runnable give = () -> {
             Tier tier = tierOf(reward);
             if (!quiet) {
-                if (crate.getWinMessage() != null) {
-                    // MessageGain de la caisse (une box sans article : butin d'un boss, voucher...)
-                    player.sendMessage(ChatUtils.colorize(crate.getWinMessage()
-                        .replace("%crate_display_name%", crate.getDisplayName())
-                        .replace("%reward_display_name%", reward.getDisplayName())
-                        .replace("%tier%", tier == null ? "" : tier.name())
-                        .replace("%player_name%", player.getName())));
-                } else {
-                    messageManager.sendMessage(player, "crate_opened", MessageManager.ph("%crate_display_name%", crate.getDisplayName(),
-                        "%reward_display_name%", reward.getDisplayName(), "%tier%", tier == null ? "" : tier.name()));
-                }
+                sendWinMessage(player, crate, reward);
             }
             for (String cmd : reward.getCommands()) {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), Papi.apply(player, cmd.replace("%player_name%", player.getName())));
@@ -809,6 +818,135 @@ public class AnimationManager {
         } else {
             Bukkit.getScheduler().runTask(plugin, give);
         }
+    }
+
+    /** Message de gain d'un lot : MessageGain de la caisse s'il y en a un (butin, voucher...), sinon crate_opened. */
+    private void sendWinMessage(Player player, Crate crate, Reward reward) {
+        Tier tier = tierOf(reward);
+        if (crate.getWinMessage() != null) {
+            player.sendMessage(ChatUtils.colorize(crate.getWinMessage()
+                .replace("%crate_display_name%", crate.getDisplayName())
+                .replace("%reward_display_name%", reward.getDisplayName())
+                .replace("%tier%", tier == null ? "" : tier.name())
+                .replace("%player_name%", player.getName())));
+        } else {
+            messageManager.sendMessage(player, "crate_opened", MessageManager.ph("%crate_display_name%", crate.getDisplayName(),
+                "%reward_display_name%", reward.getDisplayName(), "%tier%", tier == null ? "" : tier.name()));
+        }
+    }
+
+    // ------------------------------------------------------------------ ouvertures à plusieurs tirages
+
+    /** Lots d'une ouverture à plusieurs tirages : ceux que la scène montre, dans son ordre, et ceux déjà donnés. */
+    private static final class MultiOpening {
+        final Crate crate;
+        final List<Reward> shown;
+        final boolean[] given;
+
+        MultiOpening(Crate crate, List<Reward> shown) {
+            this.crate = crate;
+            this.shown = shown;
+            this.given = new boolean[shown.size()];
+        }
+    }
+
+    /**
+     * Ouverture d'une caisse à plusieurs tirages (option Tirages) : tous ses lots sont tirés d'un coup et montrés par une
+     * seule scène (PINATA), chacun donné quand il rejoint le joueur, avec le message de gain de la caisse. Les tirages
+     * perdants (option Vide) ne sont pas montrés. Sans scène possible (pas de place, joueur Bedrock), tout est donné de suite.
+     *
+     * @return faux si rien n'a pu être tiré
+     */
+    public boolean startMultiOpening(Player player, Crate crate) {
+        List<Reward> drawn = new ArrayList<>();
+        for (int i = 0; i < crate.getDraws(); i++) {
+            Draw draw = drawReward(player, crate);
+            if (draw != null && draw.reward() != null) drawn.add(draw.reward());
+        }
+        if (drawn.isEmpty()) {
+            plugin.getLogger().warning("Tirages " + crate.getId() + " pour " + player.getName() + " : aucune récompense possible.");
+            messageManager.sendMessage(player, "error_no_eligible_reward", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
+            return false;
+        }
+        for (Reward r : drawn) {
+            if (r.isEmpty()) giveReward(player, crate, r, null, false, true);
+        }
+        // du plus courant au plus rare (tri stable : l'ordre du tirage à palier égal) : le meilleur sort et arrive en dernier
+        List<Reward> shown = drawn.stream().filter(r -> !r.isEmpty())
+            .sorted(Comparator.comparingInt(this::tierRank)).collect(Collectors.toList());
+        MultiOpening opening = new MultiOpening(crate, shown);
+        multiOpenings.put(player.getUniqueId(), opening);
+
+        SceneManager scenes = plugin.getSceneManager();
+        SceneKind kind = null;
+        for (SceneKind k : SceneKind.values()) {
+            if (k.multi() && k.type().equalsIgnoreCase(crate.getAnimationConfig().getType())) kind = k;
+        }
+        Placement placement = null;
+        if (kind != null && scenes != null && !shown.isEmpty() && !(scenes.settings().bedrockFallback() && scenes.isBedrock(player))) {
+            placement = scenes.prepare(player, kind) == null ? null : scenes.placementFor(player, kind);
+        }
+        if (placement == null) {
+            finishMultiOpening(player, opening);
+            return true;
+        }
+        if (player.getOpenInventory().getType() != org.bukkit.event.inventory.InventoryType.CRAFTING
+            && !guiManager.isAnimationInventory(player.getOpenInventory().getTopInventory())) {
+            player.closeInventory();
+        }
+        Scene scene = scenes.playMulti(player, crate, shown, placement, kind, false, new MultiSceneListener() {
+            @Override
+            public void onCollect(Scene s, int index) {
+                giveMultiReward(player, opening, index, false);
+            }
+
+            @Override
+            public void onReveal(Scene s) {
+                // les lots sont donnés un par un (onCollect)
+            }
+
+            @Override
+            public void onEnd(Scene s) {
+                finishMultiOpening(player, opening);
+            }
+
+            @Override
+            public void onAbandon(Scene s, boolean wasRevealed) {
+                finishMultiOpening(player, opening);
+            }
+        });
+        if (scene == null) {
+            finishMultiOpening(player, opening);
+        }
+        return true;
+    }
+
+    private void giveMultiReward(Player player, MultiOpening opening, int index, boolean immediate) {
+        if (index < 0 || index >= opening.shown.size() || opening.given[index]) return;
+        opening.given[index] = true;
+        Reward reward = opening.shown.get(index);
+        giveReward(player, opening.crate, reward, null, immediate, true);
+        if (!immediate && player.isOnline()) {
+            sendWinMessage(player, opening.crate, reward);
+            Bukkit.getScheduler().runTask(plugin, player::updateInventory);
+        }
+    }
+
+    /** Fin de l'ouverture : les lots pas encore donnés le sont (dans l'ordre), puis les données du joueur sont écrites. */
+    private void finishMultiOpening(Player player, MultiOpening opening) {
+        if (multiOpenings.get(player.getUniqueId()) != opening) return;
+        for (int i = 0; i < opening.shown.size(); i++) giveMultiReward(player, opening, i, false);
+        multiOpenings.remove(player.getUniqueId(), opening);
+        playerDataManager.savePlayerData(player.getUniqueId());
+    }
+
+    /** Déconnexion ou arrêt du plugin pendant une ouverture à plusieurs tirages : le reste est donné tout de suite. */
+    public void flushMultiOpening(Player player) {
+        MultiOpening opening = multiOpenings.remove(player.getUniqueId());
+        if (opening == null) return;
+        if (plugin.getSceneManager() != null) plugin.getSceneManager().abort(player);
+        for (int i = 0; i < opening.shown.size(); i++) giveMultiReward(player, opening, i, true);
+        playerDataManager.savePlayerData(player.getUniqueId());
     }
 
     public void spawnFirework(Location location) {
@@ -867,6 +1005,10 @@ public class AnimationManager {
             if (queue.isEmpty()) forcedOpenings.remove(uuid);
             Optional<Crate> crate = crateId == null ? Optional.empty() : crateManager.getCrate(crateId);
             if (crate.isEmpty()) continue;
+            if (crate.get().getDraws() > 1) {
+                startMultiOpening(player, crate.get());
+                continue;
+            }
             Draw draw = drawReward(player, crate.get());
             if (draw == null || draw.reward() == null) {
                 plugin.getLogger().warning("forceopen " + crateId + " pour " + player.getName() + " : aucune récompense possible.");
@@ -890,9 +1032,11 @@ public class AnimationManager {
         for (String crateId : queue) {
             Optional<Crate> crate = crateManager.getCrate(crateId);
             if (crate.isEmpty()) continue;
-            Draw draw = drawReward(player, crate.get());
-            if (draw != null && draw.reward() != null) {
-                giveReward(player, crate.get(), draw.reward(), null, true);
+            for (int i = 0; i < crate.get().getDraws(); i++) {
+                Draw draw = drawReward(player, crate.get());
+                if (draw != null && draw.reward() != null) {
+                    giveReward(player, crate.get(), draw.reward(), null, true);
+                }
             }
         }
     }
@@ -926,6 +1070,14 @@ public class AnimationManager {
                 flushForcedOpenings(player);
             } else {
                 plugin.getLogger().warning("forceopen " + forcedOpenings.remove(uuid) + " NOT given: player " + uuid + " is offline.");
+            }
+        }
+        for (UUID uuid : new ArrayList<>(multiOpenings.keySet())) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                flushMultiOpening(player);
+            } else {
+                plugin.getLogger().warning("Tirages " + multiOpenings.remove(uuid).crate.getId() + " NOT given: player " + uuid + " is offline.");
             }
         }
         for (UUID uuid : new ArrayList<>(activeAnimations.keySet())) {

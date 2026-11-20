@@ -103,6 +103,10 @@ final class SceneCommand {
             messages.sendRawMessage(player, "scene_test_not_scene", MessageManager.ph("%crate_display_name%", crate.getDisplayName()));
             return;
         }
+        if (kind.multi()) {
+            testMulti(player, crate, kind);
+            return;
+        }
         Reward reward = null;
         if (args.length >= 4) {
             reward = crate.getRewards().stream().filter(r -> r.getId().equalsIgnoreCase(args[3])).findFirst().orElse(null);
@@ -140,6 +144,42 @@ final class SceneCommand {
         });
         messages.sendRawMessage(player, "scene_test_started", MessageManager.ph(
             "%reward_display_name%", chosen.getDisplayName(), "%crate_display_name%", crate.getDisplayName(),
+            "%spot%", placement.fixedSpot() ? "emplacement posé" : "place trouvée devant toi"));
+    }
+
+    /** Essai d'une scène à plusieurs tirages : autant de lots que l'option Tirages, tirés au hasard, rien n'est donné. */
+    private void testMulti(Player player, Crate crate, SceneKind kind) {
+        List<Reward> eligible = crate.getEligibleRewards(player).stream().filter(r -> !r.isEmpty()).collect(java.util.stream.Collectors.toList());
+        if (eligible.isEmpty()) eligible = crate.getRewards().stream().filter(r -> !r.isEmpty()).collect(java.util.stream.Collectors.toList());
+        List<Reward> drawn = new java.util.ArrayList<>();
+        for (int i = 0; i < Math.max(1, crate.getDraws()) && !eligible.isEmpty(); i++) drawn.add(Crate.pick(eligible));
+        drawn.sort(java.util.Comparator.comparingInt(r -> plugin.getAnimationManager().tierRank(r)));
+        SceneManager scenes = plugin.getSceneManager();
+        Placement placement = scenes.prepare(player, kind);
+        if (placement == null) {
+            messages.sendRawMessage(player, "scene_test_no_place", MessageManager.ph());
+            return;
+        }
+        scenes.playMulti(player, crate, drawn, scenes.placementFor(player, kind), kind, true, new org.Cry_Legende.sHCrates.scenes.MultiSceneListener() {
+            @Override
+            public void onCollect(Scene scene, int index) {
+                // essai : rien à donner
+            }
+
+            @Override
+            public void onReveal(Scene scene) {
+            }
+
+            @Override
+            public void onEnd(Scene scene) {
+            }
+
+            @Override
+            public void onAbandon(Scene scene, boolean wasRevealed) {
+            }
+        });
+        messages.sendRawMessage(player, "scene_test_started", MessageManager.ph(
+            "%reward_display_name%", drawn.size() + " lots", "%crate_display_name%", crate.getDisplayName(),
             "%spot%", placement.fixedSpot() ? "emplacement posé" : "place trouvée devant toi"));
     }
 
