@@ -72,8 +72,59 @@ public final class SceneManager implements Listener {
 
     public void start() {
         spots.load();
+        // modèle de la piñata lu tout de suite, pas pendant la première ouverture
+        try {
+            SceneModel.get(plugin, "pinata");
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(Level.WARNING, "Modèle de scène pinata illisible : " + e.getMessage());
+        }
         Bukkit.getPluginManager().registerEvents(this, plugin);
         ticker = Bukkit.getScheduler().runTaskTimer(plugin, this::tickAll, 1L, 1L);
+        Bukkit.getScheduler().runTaskLater(plugin, this::warmUp, 100L);
+    }
+
+    /**
+     * Fait passer une fois, sans joueur pour le voir, le chemin d'une scène (bloc de lumière, têtes du modèle, texte) :
+     * sinon la première scène après un démarrage coûte ~150 ms d'un coup (mesuré sur un serveur neuf), un tick perdu.
+     */
+    private void warmUp() {
+        try {
+            // la lumière côté client d'une scène (bloc LIGHT) : ~115 ms la première fois qu'un BlockData est créé
+            org.bukkit.Material.LIGHT.createBlockData();
+            Bukkit.createBlockData("minecraft:vault[facing=south,ominous=true,vault_state=inactive]");
+            // entités invisibles posées là où se trouve un joueur (chunk chargé à coup sûr), retirées dans le même tick ;
+            // personne en ligne : on réessaie plus tard
+            Player any = Bukkit.getOnlinePlayers().stream().findFirst().orElse(null);
+            if (any == null) {
+                if (ticker != null && !ticker.isCancelled()) Bukkit.getScheduler().runTaskLater(plugin, this::warmUp, 200L);
+                return;
+            }
+            Location at = any.getLocation();
+            World world = at.getWorld();
+            SceneModel model = SceneModel.get(plugin, "pinata");
+            List<Entity> spawned = new ArrayList<>();
+            for (org.bukkit.inventory.ItemStack head : model.heads) {
+                spawned.add(world.spawn(at, org.bukkit.entity.ItemDisplay.class, d -> {
+                    d.setVisibleByDefault(false);
+                    d.setPersistent(false);
+                    d.setItemStack(head);
+                    d.setItemDisplayTransform(org.bukkit.entity.ItemDisplay.ItemDisplayTransform.NONE);
+                    d.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(), new org.joml.Quaternionf(),
+                        new org.joml.Vector3f(0.5f), new org.joml.Quaternionf()));
+                    d.setInterpolationDuration(2);
+                    d.setTeleportDuration(2);
+                }));
+            }
+            spawned.add(world.spawn(at, org.bukkit.entity.TextDisplay.class, td -> {
+                td.setVisibleByDefault(false);
+                td.setPersistent(false);
+                td.text(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize("§a×1"));
+                td.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
+            }));
+            for (Entity e : spawned) e.remove();
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(Level.WARNING, "Préchauffage des scènes impossible : " + e.getMessage());
+        }
     }
 
     /** Arrêt du plugin : toutes les scènes sont retirées (les lots ont été soldés avant). */

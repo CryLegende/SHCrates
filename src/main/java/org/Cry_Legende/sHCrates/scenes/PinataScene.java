@@ -65,6 +65,8 @@ final class PinataScene extends Scene {
         final int index;
         ItemDisplay item;
         TextDisplay amount;
+        /** Nom du lot au-dessus de lui, pour le joueur seul ; caché tant qu'il ne le regarde pas. */
+        TextDisplay name;
         double angle;
         final List<Object[]> track = new ArrayList<>();
         boolean landed;
@@ -82,7 +84,6 @@ final class PinataScene extends Scene {
     private final double lift;
     private SceneModel.Instance model;
     private TextDisplay label;
-    private TextDisplay tip;
     private Drop tipOn;
 
     private int readyAt;
@@ -295,13 +296,6 @@ final class PinataScene extends Scene {
         }
         landedAt = (int) (start + Math.max(0, drops.size() - 1) * SPILL_GAP + 16);
         if (drops.isEmpty()) landedAt = t + 30;
-        tip = spawn(at(0, ITEM_Y, 0), TextDisplay.class, Audience.OWNER, td -> {
-            td.text(net.kyori.adventure.text.Component.empty());
-            td.setBillboard(Display.Billboard.CENTER);
-            td.setShadowed(true);
-            td.setBackgroundColor(Color.fromARGB(120, 0, 0, 0));
-            td.setTransformation(itemTf(new Vector3f(), new Quaternionf(), 0.001f));
-        });
     }
 
     /** Vol d'un lot : il sort du ventre, monte, retombe à sa place, rebondit une fois. Translations depuis le ventre. */
@@ -382,20 +376,25 @@ final class PinataScene extends Scene {
                 td.setTransformation(itemTf(new Vector3f(), new Quaternionf(), (float) (0.55 * s)));
             });
         }
+        // Nom posé à sa place, sans translation : un texte tourné vers la caméra applique sa translation dans le repère
+        // de la caméra, il partirait ailleurs dès que le joueur bouge la tête.
+        String name = d.reward.getDisplayName();
+        d.name = spawn(slot(d, ITEM_Y + 0.4), TextDisplay.class, Audience.OWNER, td -> {
+            td.text(LEGACY.deserialize(name));
+            td.setBillboard(Display.Billboard.CENTER);
+            td.setShadowed(true);
+            td.setBackgroundColor(Color.fromARGB(120, 0, 0, 0));
+            td.setTransformation(itemTf(new Vector3f(), new Quaternionf(), 0.001f));
+        });
         // le nom du dernier lot posé s'affiche ; une fois tous posés, celui que le joueur regarde
         showTip(d);
     }
 
     private void showTip(Drop d) {
-        if (tip == null || d == tipOn) return;
+        if (d == tipOn) return;
+        if (tipOn != null) move(tipOn.name, itemTf(new Vector3f(), new Quaternionf(), 0.001f), 2);
         tipOn = d;
-        if (d == null) {
-            move(tip, itemTf(new Vector3f(), new Quaternionf(), 0.001f), 2);
-            return;
-        }
-        tip.text(LEGACY.deserialize(d.reward.getDisplayName()));
-        double x = Math.sin(d.angle) * SLOT_R, z = Math.cos(d.angle) * SLOT_R;
-        move(tip, itemTf(offset(x, 0.5, z), new Quaternionf(), (float) (0.62 * s)), 2);
+        if (d != null) move(d.name, itemTf(new Vector3f(), new Quaternionf(), (float) (0.6 * s)), 2);
     }
 
     /** Lot que le joueur vise (le plus proche de son regard) ; sinon le meilleur, au milieu. */
@@ -455,6 +454,7 @@ final class PinataScene extends Scene {
                 Vector3f delta = new Vector3f((float) (to.getX() - from.getX()), (float) (to.getY() - from.getY()), (float) (to.getZ() - from.getZ()));
                 move(d.item, new Transformation(delta, d.item.getTransformation().getLeftRotation(), new Vector3f(0.12f * (float) s), new Quaternionf()), COLLECT_FLIGHT);
                 if (d.amount != null) remove(d.amount);
+                if (d.name != null) remove(d.name);
                 sound("pinata-envol", "entity.breeze.jump", 0.35f, 1.6f, 0f);
             }
             if (t == leave + COLLECT_FLIGHT) {
